@@ -111,6 +111,22 @@ public class View {
         mainBuf.addRow("Line 1 of the main buffer");
         mainBuf.addRow("for (int i = 0; i < 10; i++) { System.out.println('Yoyo');}");
         mainBuf.addRow("Line 3 of the main buffer");
+        mainBuf.addRow("Line 4 of the main buffer");
+        mainBuf.addRow("Line 5 of the main buffer");
+        mainBuf.addRow("Line 6 of the main buffer");
+        mainBuf.addRow("Line 7 of the main buffer");
+        mainBuf.addRow("Line 8 of the main buffer");
+        mainBuf.addRow("Line 9 of the main buffer");
+        mainBuf.addRow("Line 10 of the main buffer");
+        mainBuf.addRow("Line 11 of the main buffer");
+        mainBuf.addRow("Line 6 of the main buffer");
+        mainBuf.addRow("Line 7 of the main buffer");
+        mainBuf.addRow("Line 8 of the main buffer");
+        mainBuf.addRow("Line 9 of the main buffer");
+        mainBuf.addRow("Line 10 of the main buffer");
+        mainBuf.addRow("Line 11 of the main buffer");
+        mainBuf.addRow("Line 11 of the main buffer");
+
 
         Buf sideBuf = createBuf(
                 SIDE_BUFFER,

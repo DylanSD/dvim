@@ -408,6 +408,7 @@ public class Buf {
         List<DispObj> dispObjs = new ArrayList<>();
         int width = getScrollView().getWidth() - 5 - 1;
         int height = getScrollView().getHeight();
+        if (height > 1) height --;
 
         int stRow = getVirtualRow(height);
         int stCol = getVirtualCol(width);
@@ -444,6 +445,7 @@ public class Buf {
         int pCol = getCol() - getVirtualCol(width) + scrollView.getColStart() + 5 + 1;
 
         pCol = Math.min(pCol, width + scrollView.getColStart() - 1);
+        pRow = Math.min(pRow, height + scrollView.getRowStart() - 1);
 
         return new DispObj(pRow, pCol, new Line(0, ""));
     }
