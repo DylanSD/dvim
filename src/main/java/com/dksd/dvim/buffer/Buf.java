@@ -27,7 +27,6 @@ import com.dksd.dvim.key.FindResult;
 import com.dksd.dvim.view.Line;
 import com.dksd.dvim.view.LineIndicator;
 import com.dksd.dvim.view.ScrollView;
-import com.dksd.dvim.view.VirtualView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,7 +39,6 @@ public class Buf {
     private String filename;
     private final int bufNo;
     private final ScrollView scrollView;
-    private final VirtualView virtualView = new VirtualView();
     private final List<Line> lines = Collections.synchronizedList(new ArrayList<>());
     private final AtomicInteger row = new AtomicInteger(0), col = new AtomicInteger(0);
     private final Map<VimMode, Set<BufferMode>> bufferModes = new ConcurrentHashMap<>();
@@ -392,24 +390,40 @@ public class Buf {
         getScrollView().setRightBufs(bufs);
     }
 
-    public VirtualView getVirtualView() {
-        return virtualView;
+    private int getVirtualRow(int height) {
+        int fivePToBottom = (int) (height * 0.05);
+        int stRow = Math.min(getRow() + fivePToBottom, lines.size()) - height;
+        stRow = Math.max(0, stRow);
+        return stRow;
+    }
+
+    private int getVirtualCol(int width) {
+        int fivePToRight = (int) (width * 0.05);
+        int stCol = Math.min(getCol() + fivePToRight, lines.get(getRow()).getContent().length()) - width;
+        stCol = Math.max(0, stCol);
+        return stCol;
     }
 
     public List<DispObj> getLinesToDisplay(VimMode vimMode) {
         List<DispObj> dispObjs = new ArrayList<>();
-        //int width  = getScrollView().getWidth();
+        int width = getScrollView().getWidth() - 5 - 1;
         int height = getScrollView().getHeight();
-        for (int rowDataIndex = virtualView.getRowOffset(); rowDataIndex < virtualView.getRowOffset() + height && rowDataIndex < lines.size(); rowDataIndex++) {
+
+        int stRow = getVirtualRow(height);
+        int stCol = getVirtualCol(width);
+
+        for (int rowDataIndex = stRow; rowDataIndex < stRow + height && rowDataIndex < lines.size(); rowDataIndex++) {
+            String str = lines.get(rowDataIndex).getContent();
+            String croppedLine = str.substring(stCol, Math.min(str.length(), stCol + width));
+
             dispObjs.add(
-                    new DispObj(getOnScreenRow(rowDataIndex), getOnScreenCol(),
-                    virtualView.getCroppedLine(scrollView, lines.get(rowDataIndex))));
+                    new DispObj(getOnScreenRow(rowDataIndex - stRow), getOnScreenCol(0), new Line(rowDataIndex, croppedLine)));
         }
         return dispObjs;
     }
 
-    private int getOnScreenCol() {
-        return scrollView.getColStart() + 5 + 1;
+    private int getOnScreenCol(int colDataIndex) {
+        return colDataIndex + scrollView.getColStart() + 5 + 1;
     }
 
     private int getOnScreenRow(int rowDataIndex) {
@@ -423,7 +437,14 @@ public class Buf {
         // scroll view
         //virtualView.updateVirtualView();
 
-        return new DispObj(getOnScreenRow(row.get()), getOnScreenCol(),
-                new Line(0, ""));
+        int width = getScrollView().getWidth();
+        int height = getScrollView().getHeight();
+
+        int pRow = getRow() - getVirtualRow(height) + scrollView.getRowStart() + 1;
+        int pCol = getCol() - getVirtualCol(width) + scrollView.getColStart() + 5 + 1;
+
+        pCol = Math.min(pCol, width + scrollView.getColStart() - 1);
+
+        return new DispObj(pRow, pCol, new Line(0, ""));
     }
 }
