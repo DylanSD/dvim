@@ -75,32 +75,19 @@ public class Buf {
         return col.get();
     }
 
+    //Col is the actual pos of the cursor in the buffer.
+    //How it gets to the screen is a different question.
     private void setCol(int col) {
         if (col < 0) {
             this.col.set(0);
             return;
         }
-        if (col == 0 && virtualView.getColOffset() > 0) {
-            virtualView.incrColOffset(-1);
-            return;
-        }
-        int maxScroll = scrollView.getWidth() - 5 - 1 - 1;
         int ll = getLine().getContent().length();
-        int actualCur = col + virtualView.getColOffset();
-        System.out.println("Line len: " + ll + " col: " + col + " scrollEnd: " + maxScroll + " estimated curPos " +
-                actualCur);
-        if (col == maxScroll && actualCur < ll) {
-            virtualView.incrColOffset(1);
+        if (col > ll) {
+            this.col.set(ll);
             return;
         }
-        int min = Math.min(col, maxScroll);
-        if (min < 0) {
-            min = 0;
-        }
-        if (actualCur > ll) {
-            return;
-        }
-        this.col.set(min);
+        this.col.set(col);
     }
 
     public void insertIntoLine(String str) {
@@ -122,6 +109,7 @@ public class Buf {
         int row = getRow();
         if (row + rowDelta >= 0 && row + rowDelta <= lines.size() - 1) {
             setRow(row + rowDelta);
+            addToCol(0);
         }
     }
 
@@ -429,7 +417,13 @@ public class Buf {
     }
 
     public DispObj getDisplayCursor() {
-        return new DispObj(getOnScreenRow(row.get()), scrollView.getColStart() + 5 + 1 + col.get(),
+
+        // actual file content
+        // virtual view
+        // scroll view
+        //virtualView.updateVirtualView();
+
+        return new DispObj(getOnScreenRow(row.get()), getOnScreenCol(),
                 new Line(0, ""));
     }
 }

@@ -187,4 +187,5 @@ public class ScrollView {
     public int getWidth() {
         return colEnd - colStart;
     }
+
 }

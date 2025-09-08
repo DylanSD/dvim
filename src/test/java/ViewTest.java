@@ -12,6 +12,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.MockitoAnnotations.openMocks;
 import com.dksd.dvim.buffer.Buf;
 import com.dksd.dvim.buffer.BufferMode;
+import com.dksd.dvim.view.DispObj;
+import com.dksd.dvim.view.Line;
 import com.dksd.dvim.view.LineIndicator;
 import com.dksd.dvim.view.View;
 import com.googlecode.lanterna.TerminalSize;
@@ -40,7 +42,7 @@ class ViewTest {
         Mockito.when(terminalScreenMock.newTextGraphics()).thenReturn(textGraphicsMock);
         Mockito.when(terminalSizeMock.getRows()).thenReturn(80);
         Mockito.when(terminalSizeMock.getColumns()).thenReturn(100);
-        view = new View("testView",terminalScreenMock, Executors.newVirtualThreadPerTaskExecutor());
+        view = new View("testView", terminalScreenMock, Executors.newVirtualThreadPerTaskExecutor());
     }
 
     @Test
@@ -66,6 +68,25 @@ class ViewTest {
 
     @Test
     void testCursorMainView() {
+        //Setup the scrollview,
+        //Setup the lines.
+        Buf mainBuf = view.getBufferByName(MAIN_BUFFER);
+        mainBuf.getLinesDangerous().clear();
+        mainBuf.addRow("Line 1 of the main buffer");
+        mainBuf.addRow("for (int i = 0; i < 10; i++) { System.out.println('Yoyo');}");
+        mainBuf.addRow("Line 3 of the main buffer");
+        mainBuf.addToRow(1);
+        mainBuf.addToCol(1);
+        assrt(mainBuf,5,6);
+        mainBuf.addToCol(20);
+        assrt(mainBuf,5,6);
 
+    }
+
+    private void assrt(Buf mainBuf, int row, int col) {
+        DispObj dispObj = mainBuf.getDisplayCursor();
+
+        assertEquals(row, dispObj.getScreenRow());
+        assertEquals(col, dispObj.getScreenCol());
     }
 }
