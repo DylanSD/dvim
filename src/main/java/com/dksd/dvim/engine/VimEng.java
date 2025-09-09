@@ -258,7 +258,7 @@ public class VimEng {
             System.out.println("Did not find a command to run: " + vimCommands);
         } else if (!foundNodes.isEmpty() && foundNodes.getFirst().isWord()) {
             keyStrokes.clear();
-            System.out.println("found and executed mapping and cleared keystrokes: " + vimCommands);
+            //System.out.println("found and executed mapping and cleared keystrokes: " + vimCommands);
         } else {
             System.out.println("Not found a command not sure why: " + vimCommands);
         }

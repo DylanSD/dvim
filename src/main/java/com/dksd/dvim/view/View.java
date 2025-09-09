@@ -246,12 +246,12 @@ public class View {
         if (activeBufNo.get() == buf.getBufNo()) {
             DispObj cursor = buf.getDisplayCursor();
             placeCursor(screen, cursor.getScreenCol(), cursor.getScreenRow());
-            try {
+            /*try {
                 logger.info("Char at cursor is: " + buf.getLine(buf.getRow()).getContent().charAt(buf.getCol()));
                 System.out.println("Char at cursor is: " + buf.getLine(buf.getRow()).getContent().charAt(buf.getCol()));
             } catch (Exception ep) {
                 //NOOP
-            }
+            }*/
         }
     }
 

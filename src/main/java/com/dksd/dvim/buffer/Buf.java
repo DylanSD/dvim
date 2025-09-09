@@ -90,6 +90,9 @@ public class Buf {
         int row = getRow();
         int col = getCol();
         try {
+            if (lines.isEmpty()) {
+                lines.add(new Line(0, ""));
+            }
             Line line = lines.get(row);
             StringBuilder sb = new StringBuilder(line.getContent());
             sb.insert(col, str);
@@ -97,7 +100,7 @@ public class Buf {
             setCol(col + str.length());
             VimEvent event = new VimEvent(bufNo, EventType.BUF_CHANGE);
             eventQueue.add(event);
-            System.out.println("Buf event: " + event);
+            //System.out.println("Buf event: " + event);
         } catch (Exception ep) {
             ep.printStackTrace();
         }
