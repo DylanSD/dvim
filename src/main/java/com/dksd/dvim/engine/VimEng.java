@@ -274,6 +274,10 @@ public class VimEng {
     public void loadFile(Buf buf, String fileName) {
 
     }
+
+    public void popPrevChange() {
+        getView().getActiveBuf().undo();
+    }
 }
 
 /*

@@ -64,6 +64,7 @@ public class View {
                 STATUS_BUFFER + ".txt",
                 -1,//indicates fixed
                 100,
+                false,
                 BufferMode.NO_LINE_NUMBERS,
                 BufferMode.FIXED_HEIGHT,
                 BufferMode.RIGHT_BORDER,
@@ -76,6 +77,7 @@ public class View {
                 HEADER_BUFFER + ".txt",
                 -1,
                 100,
+                false,
                 BufferMode.UNSELECTABLE,
                 BufferMode.NO_LINE_NUMBERS,
                 BufferMode.FIXED_HEIGHT,
@@ -90,6 +92,7 @@ public class View {
                 MAIN_BUFFER + ".txt",
                 100,
                 65,
+                true,
                 BufferMode.RELATIVE_HEIGHT,
                 BufferMode.LEFT_BORDER,
                 BufferMode.RIGHT_BORDER,
@@ -120,6 +123,7 @@ public class View {
                 SIDE_BUFFER + ".txt",
                 100,
                 35,
+                true,
                 BufferMode.RELATIVE_HEIGHT,
                 BufferMode.LEFT_BORDER,
                 BufferMode.TOP_BORDER);
@@ -163,13 +167,14 @@ public class View {
         });
     }
 
-    public Buf createBuf(String name, String filename, int percentHeight, int percentWidth, BufferMode...bufferModes) {
+    public Buf createBuf(String name, String filename, int percentHeight, int percentWidth, boolean keepUndos, BufferMode...bufferModes) {
         int bufNum = buffers.size();
         Buf buf = new Buf(name,
                 filename,
                 bufNum,
                 new ScrollView(percentHeight, percentWidth),
-                events
+                events,
+                keepUndos
         );
         buffers.put(bufNum, buf);
         setBufferPermissions(bufNum, bufferModes);

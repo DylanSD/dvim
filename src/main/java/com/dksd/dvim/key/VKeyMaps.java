@@ -220,7 +220,11 @@ public class VKeyMaps {
             vimEng.setLine(vimEng.getRow(), l);
             return null;//no mapping
         });
-
+        putKeyMap(VimMode.COMMAND, "u", "undo the last action", s -> {
+            //vimEng.setVimMode(VimMode.INSERT);
+            vimEng.popPrevChange();
+            return null;//no mapping
+        });
         putKeyMap(VimMode.COMMAND, "i", "desc", s -> {
             vimEng.setVimMode(VimMode.INSERT);
             System.out.println("Pressed i to go into insert mode");

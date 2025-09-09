@@ -9,7 +9,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -37,18 +36,20 @@ public class Buf {
     private String filename;
     private final int bufNo;
     private final ScrollView scrollView;
-    private final List<Line> lines = Collections.synchronizedList(new ArrayList<>());
+    private final InternalBuf lines;
     private final AtomicInteger row = new AtomicInteger(0), col = new AtomicInteger(0);
     private final Set<BufferMode> bufferModes = new HashSet<>();
     private final List<LineIndicator> lineIndicators = new ArrayList<>();
     private final Queue<VimEvent> eventQueue;
 
-    public Buf(String name, String filename, int bufNo, ScrollView scrollView, Queue<VimEvent> eventQueue) {
+    public Buf(String name, String filename, int bufNo, ScrollView scrollView, Queue<VimEvent> eventQueue,
+               boolean keepUndos) {
         this.filename = filename;
         this.bufNo = bufNo;
         this.eventQueue = eventQueue;
         this.name = name;
         this.scrollView = scrollView;
+        lines = new InternalBuf(keepUndos);
     }
 
     public ScrollView getScrollView() {
@@ -213,7 +214,7 @@ public class Buf {
     }
 
     public List<Line> getLinesDangerous() {
-        return lines;
+        return lines.getLines();
     }
 
     public void readFile(String filenameIn) {
@@ -247,7 +248,7 @@ public class Buf {
                         )
                 )
         ) {
-            for (Line line : lines) {
+            for (Line line : lines.getLines()) {
                 printWriter.println(line.getContent());
             }
         }
@@ -451,5 +452,9 @@ public class Buf {
         pRow = Math.min(pRow, height + scrollView.getRowStart() - 1);
 
         return new DispObj(pRow, pCol, new Line(0, ""));
+    }
+
+    public void undo() {
+        lines.undo();
     }
 }
