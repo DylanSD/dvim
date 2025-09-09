@@ -30,7 +30,7 @@ public class RingBuffer<T> {
 
     public T current() {
         if (currentIndex == -1) {
-            return null; // not initialized yet
+            next();
         }
         return items.get(currentIndex);
     }
@@ -51,6 +51,11 @@ public class RingBuffer<T> {
 
     public void clear() {
         this.items.clear();
+    }
+
+    public void setCurrent(T value) {
+        items.add(value);
+        currentIndex = items.indexOf(value);
     }
 }
 

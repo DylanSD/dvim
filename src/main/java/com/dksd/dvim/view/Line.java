@@ -6,20 +6,22 @@ import java.util.List;
 public class Line {
     private int lineNumber;
     private String content;
+    private String indicatorStr = null;
 
-    public Line(int lineNumber, String content) {
+    public Line(int lineNumber, String content, String indicatorStr) {
         this.lineNumber = lineNumber;
         this.content = content;
+        this.indicatorStr = indicatorStr;
     }
 
-    public static Line of(int lineNumber, String string) {
-        return new Line(lineNumber, string);
+    public static Line of(int lineNumber, String string, String indicatorStr) {
+        return new Line(lineNumber, string, indicatorStr);
     }
 
     public static List<Line> convert(List<String> lns) {
         List<Line> lines = new ArrayList<>();
         for (int i = 0; i < lns.size(); i++) {
-            lines.add(Line.of(i, lns.get(i)));
+            lines.add(Line.of(i, lns.get(i), null));
         }
         return lines;
     }
@@ -56,11 +58,20 @@ public class Line {
         this.lineNumber = lineNumber;
     }
 
+    public String getIndicatorStr() {
+        return indicatorStr;
+    }
+
+    public void setIndicatorStr(String indicatorStr) {
+        this.indicatorStr = indicatorStr;
+    }
+
     @Override
     public String toString() {
         return "Line{" +
                 "lineNumber=" + lineNumber +
                 ", content='" + content + '\'' +
+                ", indicatorStr='" + indicatorStr + '\'' +
                 '}';
     }
 }

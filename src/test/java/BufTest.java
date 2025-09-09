@@ -73,7 +73,7 @@ class BufTest {
     @Test
     void croppedLinesOneHeightTest() {
         buf.setLines(List.of(new Line(0, "")));
-        List<DispObj> dispObjs = buf.getLinesToDisplay(VimMode.COMMAND);
+        List<DispObj> dispObjs = buf.getLinesToDisplay();
         assertEquals(dispObjs.size(), 1);
     }
 

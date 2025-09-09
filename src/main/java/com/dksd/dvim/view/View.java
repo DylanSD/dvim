@@ -237,12 +237,18 @@ public class View {
 
         List<DispObj> dispLineInclGutters = buf.getLinesToDisplay();
 
-        drawGutters(textGraphics, buf);
+        drawBorders(textGraphics, buf);
 
         for (int i = 0; i < dispLineInclGutters.size(); i++) {
             DispObj dispObj = dispLineInclGutters.get(i);
+            Line gutter = genGutter(buf, dispObj.getLineContent());
                 drawString(textGraphics,
-                        dispObj.getContent(),
+                        gutter,
+                        0,
+                        dispObj.getScreenRow(),
+                        futures);
+                drawString(textGraphics,
+                        dispObj.getLineContent(),
                         dispObj.getScreenCol(),
                         dispObj.getScreenRow(),
                         futures);
@@ -259,7 +265,7 @@ public class View {
         }
     }
 
-    private void drawGutters(TextGraphics textGraphics, Buf buf) {
+    private void drawBorders(TextGraphics textGraphics, Buf buf) {
         int gutterSize = buf.getGutterSize();
         int colst = buf.getScrollView().getColStart();
         int rowst = buf.getScrollView().getRowStart();
@@ -292,36 +298,22 @@ public class View {
         textGraphics.setForegroundColor(new TextColor.RGB(mochaBaseRGB[0], mochaBaseRGB[1], mochaBaseRGB[2]));
     }
 
-    private void drawGutter(VimMode vimMode,
-                            Buf buf,
-                            TerminalScreen screen,
-                            Line line,
-                            int i,
-                            int rowOffset,
-                            int colst) {
+    private Line genGutter(Buf buf,
+                           Line line) {
         StringBuilder gutter = new StringBuilder();
-        for (LineIndicator lineIndicator : buf.getLineIndicators()) {
-            if (lineIndicator.getLineNo() == -1 || lineIndicator.getLineNo() == i) {
-                gutter.append(lineIndicator.getIndicatorStr());
-            }
+        if (line.getIndicatorStr() != null) {
+            gutter.append(line.getIndicatorStr());
         }
         if (!buf.containsBufferMode(BufferMode.NO_LINE_NUMBERS)) {
             String numStr = Integer.toString(line.getLineNumber());
-            gutter.append(" ".repeat(Math.max(0, gutter.length() - numStr.length())));
+            gutter.append(" ".repeat(Math.max(0, 5 - numStr.length() - gutter.length())));
             gutter.append(numStr);
         }
-        putStr(screen, gutter.toString(), colst, i + rowOffset);
+        return new Line(line.getLineNumber(), gutter.toString(), line.getIndicatorStr());
     }
 
     private static void placeCursor(TerminalScreen screen, int x, int y) {
         screen.setCursorPosition(new TerminalPosition(x, y));
-    }
-
-    private void drawIndicators(TerminalScreen screen, String line,
-                                Set<LineIndicator> indicators, int colOffset, int row) {
-        for (LineIndicator indicator : indicators) {
-            indicator.drawIndicator(screen, line, colOffset, row);
-        }
     }
 
     private boolean isCursorRow(Buf buf, int row) {

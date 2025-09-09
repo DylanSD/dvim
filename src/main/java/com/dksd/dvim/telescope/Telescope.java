@@ -6,7 +6,6 @@ import com.dksd.dvim.event.EventType;
 import com.dksd.dvim.event.VimEvent;
 import com.dksd.dvim.key.VKeyMaps;
 import com.dksd.dvim.view.Line;
-import com.dksd.dvim.view.LineIndicator;
 import com.dksd.dvim.view.View;
 import com.dksd.dvim.view.VimMode;
 import de.gesundkrank.fzf4j.matchers.FuzzyMatcherV1;
@@ -21,7 +20,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
@@ -75,8 +73,6 @@ public final class Telescope {
     private Buf resultsBuf;
     private int inputBufNo;
     private int resultsBufNo;
-    private final AtomicInteger currentSelected = new AtomicInteger(0);
-    private final AtomicReference<Line> currentSelLine = new AtomicReference<>();
 
     /* --------------------------------------------------------------- *
      *  Private constructor – only the Builder can create instances    *
@@ -145,7 +141,7 @@ public final class Telescope {
 
         // 3️⃣  Initialise UI state (arrow on first line, focus input)
         telescopeView.setActiveBuf(View.SIDE_BUFFER);
-        moveArrowInResults(resultsBuf, 0, currentSelected, currentSelLine);
+        moveArrowInResults(resultsBuf, 0);
     }
 
     /* --------------------------------------------------------------- *
@@ -175,7 +171,7 @@ public final class Telescope {
                 "<up>",
                 "move selection up",
                 is -> {
-                    moveArrowInResults(resultsBuf, -1, currentSelected, currentSelLine);
+                    moveArrowInResults(resultsBuf, -1);
                     return null;
                 },
                 true);
@@ -183,14 +179,14 @@ public final class Telescope {
         // <Down> – move selection down
         vKeyMaps.reMap(List.of(VimMode.INSERT, VimMode.COMMAND), "<down>", "move selection down",
                 is -> {
-                    moveArrowInResults(resultsBuf, 1, currentSelected, currentSelLine);
+                    moveArrowInResults(resultsBuf, 1);
                     return null;
                 }, true);
 
         // <Enter> – confirm current selection
         vKeyMaps.reMap(List.of(VimMode.INSERT, VimMode.COMMAND), "<enter>", "accept selection",
                 is -> {
-                    Line selected = currentSelLine.get();
+                    Line selected = resultsBuf.getCurrentLine();
                     resultFuture.complete(selected);
                     System.out.println("Selected: " + selected);
                     return null;
@@ -240,7 +236,7 @@ public final class Telescope {
         private ExecutorService executorService;
 
         // optional – sensible defaults
-        private long timeout = 100;                 // 100 units by default
+        private long timeout = 1000;                 // 100 units by default
         private TimeUnit timeoutUnit = TimeUnit.SECONDS;
         private FuzzyMatcherV1 matcher = null;      // lazy‑created if null
 
@@ -282,34 +278,13 @@ public final class Telescope {
         }
     }
 
-    /* --------------------------------------------------------------- *
-     *  Helper stubs – these are the same methods you already had in   *
-     *  the original code.  They are left untouched here for brevity.   *
-     * --------------------------------------------------------------- */
     private void moveArrowInResults(Buf resultsBuf,
-                                    int rowDelta,
-                                    AtomicInteger currentSelected,
-                                    AtomicReference<Line> currentSelLine) {
-        LineIndicator li = findSelectedIndicator(resultsBuf);
-        int newSelected = currentSelected.get() + rowDelta;
-        if (resultsBuf.isRowInBounds(newSelected)) {
-            if (li == null) {
-                li = new LineIndicator("->", newSelected, LineIndicator.IndicatorType.GUTTER);
-                resultsBuf.addIndicator(li);
-            }
-            li.setLineNo(newSelected);
-            currentSelected.set(newSelected);
-            currentSelLine.set(resultsBuf.getLine(newSelected));
-        }
-    }
-
-    private LineIndicator findSelectedIndicator(Buf buf) {
-        for (LineIndicator lineIndicator : buf.getLineIndicators()) {
-            if (lineIndicator.getIndicatorStr().equals("->")) {
-                return lineIndicator;
-            }
-        }
-        return null;
+                                    int rowDelta) {
+        resultsBuf.getCurrentLine().setIndicatorStr(null);
+        System.out.println(resultsBuf.getCurrentLine());
+        resultsBuf.addToRow(rowDelta);
+        resultsBuf.getCurrentLine().setIndicatorStr("->");
+        System.out.println(resultsBuf.getCurrentLine());
     }
 
     private List<Result> handleBufChangeEvent(VimEvent vimEvent,
@@ -318,13 +293,15 @@ public final class Telescope {
                                               FuzzyMatcherV1 fuzzyMatcher,
                                               Buf results) {
         if (vimEvent.getBufNo() == inputBufNo && EventType.BUF_CHANGE.equals(vimEvent.getEventType())) {
-            System.out.println("Received buf change event for buf: " + inputBufNo + " value " + input.getLine());
-            List<Result> keptLines = fuzzyMatcher.match(input.getLine().getContent());
+            String currLine = input.getLine(input.getRow()).getContent();
+            System.out.println("Received buf change event for buf: " + inputBufNo + " value " + currLine);
+            List<Result> keptLines = fuzzyMatcher.match(currLine);
             List<Line> keptLinesForBuf = new ArrayList<>(keptLines.size());
             for (Result keptLine : keptLines) {
-                keptLinesForBuf.add(Line.of(keptLine.getItemIndex(), keptLine.getText()));
+                keptLinesForBuf.add(Line.of(keptLine.getItemIndex(), keptLine.getText(), null));
             }
             results.setLines(keptLinesForBuf);
+            moveArrowInResults(resultsBuf, 0);
             return keptLines;
         }
         return Collections.emptyList();

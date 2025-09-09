@@ -17,12 +17,9 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.dksd.dvim.view.DispObj;
-import com.dksd.dvim.view.VimMode;
 import com.dksd.dvim.event.EventType;
 import com.dksd.dvim.event.VimEvent;
-import com.dksd.dvim.key.FindResult;
 import com.dksd.dvim.view.Line;
-import com.dksd.dvim.view.LineIndicator;
 import com.dksd.dvim.view.ScrollView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,7 +35,7 @@ public class Buf {
     private final InternalBuf lines;
     private final AtomicInteger row = new AtomicInteger(0), col = new AtomicInteger(0);
     private final Set<BufferMode> bufferModes = new HashSet<>();
-    private final List<LineIndicator> lineIndicators = new ArrayList<>();
+    //private final List<LineIndicator> lineIndicators = new ArrayList<>();
     private final Queue<VimEvent> eventQueue;
 
     public Buf(String name, String filename, int bufNo, ScrollView scrollView, Queue<VimEvent> eventQueue,
@@ -78,7 +75,7 @@ public class Buf {
             this.col.set(0);
             return;
         }
-        int ll = getLine().getContent().length();
+        int ll = getCurrentLine().getContent().length();
         if (col > ll) {
             this.col.set(ll);
             return;
@@ -91,12 +88,12 @@ public class Buf {
         int col = getCol();
         try {
             if (lines.isEmpty()) {
-                lines.add(new Line(0, ""));
+                lines.add(new Line(0, "", null));
             }
             Line line = lines.get(row);
             StringBuilder sb = new StringBuilder(line.getContent());
             sb.insert(col, str);
-            lines.set(row, Line.of(line.getLineNumber(), sb.toString()));
+            lines.set(row, Line.of(line.getLineNumber(), sb.toString(), line.getIndicatorStr()));
             setCol(col + str.length());
             VimEvent event = new VimEvent(bufNo, EventType.BUF_CHANGE);
             eventQueue.add(event);
@@ -149,13 +146,9 @@ public class Buf {
         }
     }
 
-    public Line getLine() {
-        return getLine(getRow());
-    }
-
     public Line getLine(int row) {
         if (lines.isEmpty()) {
-            lines.add(new Line(0,""));
+            lines.add(new Line(0,"", null));
             setRow(0);
         }
         return lines.get(row);
@@ -168,9 +161,9 @@ public class Buf {
 
     public void setLine(int row, String str) {
         while (lines.size() <= row) {
-            lines.add(new Line(row, ""));
+            lines.add(new Line(row, "", null));
         }
-        lines.set(row, new Line(row, str));
+        lines.set(row, new Line(row, str, null));
         eventQueue.add(new VimEvent(bufNo, EventType.BUF_CHANGE));
     }
 
@@ -207,7 +200,7 @@ public class Buf {
 
     public void addRow(String str) {
         int size = lines.size();
-        lines.add(new Line(size, str));
+        lines.add(new Line(size, str, null));
         setCol(str.length());
         eventQueue.add(new VimEvent(bufNo, EventType.BUF_CHANGE));
     }
@@ -292,43 +285,19 @@ public class Buf {
     }
 
     public void appendToLine(String str) {
-        setLine(getRow(), getLine() + str);
-        setCol(getLine().length());
+        setLine(getRow(), getCurrentLine() + str);
+        setCol(getCurrentLine().length());
         eventQueue.add(new VimEvent(bufNo, EventType.BUF_CHANGE));
-    }
-
-
-    public void addIndicator(LineIndicator lineIndicator) {
-        lineIndicators.add(lineIndicator);
-    }
-
-    public List<FindResult> find(String searchTerm) {
-        List<FindResult> results = new ArrayList<>();
-        for (int i = 0; i < lines.size(); i++) {
-            int indo = lines.get(i).getContent().indexOf(searchTerm);
-            if (indo != -1) {
-                results.add(new FindResult(indo, i));
-            }
-        }
-        return results;
     }
 
     public Set<BufferMode> getBufferModes() {
         return bufferModes;
     }
 
-    public List<LineIndicator> getLineIndicators() {
-        return lineIndicators;
-    }
-
-    public boolean isRowInBounds(int rowPos) {
-        return rowPos >= 0 && rowPos < lines.size();
-    }
-
     public void splitToNextLine() {
         int col = getCol();
         int row = getRow();
-        Line line = getLine();
+        Line line = getCurrentLine();
         String restOfline = getStrAfter(line.getContent(), col);
         line.setContent(line.getContent().substring(0, col));
         insertStr(row + 1, restOfline);
@@ -344,7 +313,7 @@ public class Buf {
     }
 
     private void insertStr(int indx, String restOfline) {
-        lines.add(indx, new Line(indx, restOfline));
+        lines.add(indx, new Line(indx, restOfline, null));
     }
 
     private String getStrAfter(String line, int col) {
@@ -382,22 +351,22 @@ public class Buf {
         getScrollView().setRightBufs(bufs);
     }
 
-    private int getVirtualRow(int height) {
+    private int getVirtualRow(int row, int height) {
         if (lines.isEmpty()) {
             return 0;
         }
         int fivePToBottom = (int) (height * 0.05);
-        int stRow = Math.min(getRow() + fivePToBottom, lines.size()) - height;
+        int stRow = Math.min(row + fivePToBottom, lines.size()) - height;
         stRow = Math.max(0, stRow);
         return stRow;
     }
 
-    private int getVirtualCol(int width) {
-        if (lines.isEmpty() || getRow() > lines.size()) {
+    private int getVirtualCol(int row, int col, int width) {
+        if (lines.isEmpty() || row > lines.size()) {
             return 0;
         }
         int fivePToRight = (int) (width * 0.05);
-        int stCol = Math.min(getCol() + fivePToRight, lines.get(getRow()).getContent().length()) - width;
+        int stCol = Math.min(col + fivePToRight, lines.get(row).getContent().length()) - width;
         stCol = Math.max(0, stCol);
         return stCol;
     }
@@ -410,15 +379,18 @@ public class Buf {
         int height = getScrollView().getHeight();
         if (height > 1) height -= topBorderWidth;
 
-        int stRow = getVirtualRow(height);
-        int stCol = getVirtualCol(width);
+        int stRow = getVirtualRow(getRow(), height);
+        int stCol = getVirtualCol(getRow(), getCol(), width);
 
         for (int rowDataIndex = stRow; rowDataIndex < stRow + height && rowDataIndex < lines.size(); rowDataIndex++) {
-            String str = lines.get(rowDataIndex).getContent();
+            Line lineStr = lines.get(rowDataIndex);
+            String str = lineStr.getContent();
             String croppedLine = str.substring(stCol, Math.min(str.length(), stCol + width));
 
             dispObjs.add(
-                    new DispObj(getOnScreenRow(rowDataIndex - stRow, topBorderWidth), getOnScreenCol(0, leftBorderWidth), new Line(rowDataIndex, croppedLine)));
+                    new DispObj(getOnScreenRow(rowDataIndex - stRow, topBorderWidth),
+                            getOnScreenCol(0, leftBorderWidth),
+                            new Line(rowDataIndex, croppedLine, lineStr.getIndicatorStr())));
         }
         return dispObjs;
     }
@@ -444,16 +416,24 @@ public class Buf {
         int width = getScrollView().getWidth();
         int height = getScrollView().getHeight();
 
-        int pRow = getRow() - getVirtualRow(height) + scrollView.getRowStart() + 1;
-        int pCol = getCol() - getVirtualCol(width) + scrollView.getColStart() + 5 + 1;
+        int pRow = getRow() - getVirtualRow(getRow(), height) + scrollView.getRowStart() + 1;
+        int pCol = getCol() - getVirtualCol(getRow(), getCol(), width) + scrollView.getColStart() + 5 + 1;
 
         pCol = Math.min(pCol, width + scrollView.getColStart() - 1);
         pRow = Math.min(pRow, height + scrollView.getRowStart() - 1);
 
-        return new DispObj(pRow, pCol, new Line(0, ""));
+        return new DispObj(pRow, pCol, new Line(0, "", null));
     }
 
     public void undo() {
         lines.undo();
+    }
+
+    public Line getCurrentLine() {
+        return getLine(getRow());
+    }
+
+    public Line getCurrentLineIndicator() {
+        return getLine(getRow());
     }
 }

@@ -128,7 +128,7 @@ public class VimEng {
 
     public void updateStatus() {
         String ans = SFormatter.format("MODE: {{status}} Keys: {{keys}}", getVimMode().toString(), keyStrokes);
-        getView().getBufferByName(View.STATUS_BUFFER).setLines(List.of(Line.of(0, ans)));
+        getView().getBufferByName(View.STATUS_BUFFER).setLines(List.of(Line.of(0, ans, null)));
     }
 
 //    private void setCol(int col) {
@@ -222,11 +222,11 @@ public class VimEng {
     }
 
     public Line getCurrentLine() {
-        return getView().getBuffer(getView().getActiveBufNo()).getLine();
+        return getView().getBuffer(getView().getActiveBufNo()).getCurrentLine();
     }
 
     private Line getCurrentLine(View view, int bufNo) {
-        return view.getBuffer(bufNo).getLine();
+        return view.getBuffer(bufNo).getCurrentLine();
     }
 
     public int getCol() {
@@ -264,11 +264,6 @@ public class VimEng {
         } else {
             System.out.println("Not found a command not sure why: " + vimCommands);
         }
-    }
-
-
-    public void setCurrentDir(String dir) {
-
     }
 
     public void loadFile(Buf buf, String fileName) {

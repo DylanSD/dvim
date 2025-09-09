@@ -12,7 +12,7 @@ public class DispObj {
         this.croppedLine = croppedLine;
     }
 
-    public Line getContent() {
+    public Line getLineContent() {
         return croppedLine;
     }
 

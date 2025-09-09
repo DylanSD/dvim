@@ -41,11 +41,12 @@ public class VKeyMaps {
     //Used for duplication and getting a list of keys
     private final Set<String> keysMappings = new HashSet<>();
     private final Harpoons harpoons = new Harpoons();
+    private Function<String, String> prevFunctionRun = null;
 
     public VKeyMaps(VimEng ve) {
         this.vimEng = ve;
         loadVimKeyConverter();
-        harpoons.add(Harpoons.DIRS, Paths.get("").toAbsolutePath().toString());
+        harpoons.add(Harpoons.DIRS, System.getProperty("user.dir"));
     }
 
     //TODO  read this from configuration file or something
@@ -225,6 +226,11 @@ public class VKeyMaps {
             vimEng.popPrevChange();
             return null;//no mapping
         });
+        putKeyMap(VimMode.COMMAND, ".", "redo the last action", s -> {
+            //vimEng.setVimMode(VimMode.INSERT);
+            prevFunctionRun.apply(vimEng.getCurrentLine().getContent());
+            return null;//no mapping
+        });
         putKeyMap(VimMode.COMMAND, "i", "desc", s -> {
             vimEng.setVimMode(VimMode.INSERT);
             System.out.println("Pressed i to go into insert mode");
@@ -258,7 +264,7 @@ public class VKeyMaps {
         });
         putKeyMap(VimMode.COMMAND, "<leader>fd", "find and set directories", s -> {
             telescope(streamPath(getCurrentPath(), Files::isDirectory).toList(), line -> {
-                vimEng.setCurrentDir(line.getContent());
+                setCurrentDir(line.getContent());
             });
             return null;
         });
@@ -413,7 +419,7 @@ public class VKeyMaps {
                 });
         putKeyMap(List.of(VimMode.INSERT, VimMode.COMMAND), "<c-d><c-u>", "go up a directory (global)",
                 s -> {
-                    Directories.goUp(harpoons);
+                    harpoons.get(Harpoons.DIRS).current();
                     return null;//no mapping
                 });
         putKeyMap(VimMode.COMMAND, "<leader>vl", "see/find all current variables", s -> {
@@ -477,6 +483,14 @@ public class VKeyMaps {
         });*/
     }
 
+    private void setCurrentDir(String dir) {
+        harpoons.get(Harpoons.DIRS).setCurrent(dir);
+    }
+
+    private Path getCurrentPath() {
+        return Path.of(harpoons.get(Harpoons.DIRS).current());
+    }
+
     private void telescope(List<String> options, Consumer<Line> consumer) {
         //Support delete, tab completions as well from AI yes?
         Telescope.builder(vimEng, this)
@@ -510,19 +524,6 @@ public class VKeyMaps {
             ep.printStackTrace();
         }
         return -1;
-    }
-
-    private String getTeleEntryStream(VimMode vimMode,
-                                      Map.Entry<String, KeyMap> entry) {
-        if (entry.getValue().getDescription() == null) {
-            return vimMode.name().toLowerCase() + "  ->  " + entry.getKey();
-        }
-        return vimMode.name().toLowerCase() + "  ->  " + entry.getKey()
-                + ", " + entry.getValue().getDescription();
-    }
-
-    public Path getCurrentPath() {
-        return Directories.getCurrentPath(harpoons);
     }
 
     public static Stream<String> streamPath(Path dir, Predicate<Path> filter) {
@@ -569,6 +570,9 @@ public class VKeyMaps {
         nodes.add(foundNode);
         if (foundNode.isWord()) {
             String funcResult = foundNode.getLastFunc().apply(keyStrokes);
+            if (!".".equals(keyStrokes)) {
+                prevFunctionRun = foundNode.getLastFunc();
+            }
             mapRecursively(nodes, depth + 1, vimMode, funcResult);
         }
     }
