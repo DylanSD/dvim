@@ -16,4 +16,12 @@ public class VimEvent {
     public int getBufNo() {
         return bufNo;
     }
+
+    @Override
+    public String toString() {
+        return "VimEvent{" +
+                "eventType=" + eventType +
+                ", bufNo=" + bufNo +
+                '}';
+    }
 }

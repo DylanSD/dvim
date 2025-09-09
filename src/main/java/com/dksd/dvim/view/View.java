@@ -53,6 +53,7 @@ public class View {
     private int mainBufNo = -1;
     private int sideBufNo = -1;
     private final ExecutorService executor;
+    private JavaSyntaxHighlighter syntaxHighlighter = new JavaSyntaxHighlighter();
 
     public View(String viewName, TerminalScreen screen, ExecutorService executor) {
         this.name = viewName;
@@ -60,6 +61,7 @@ public class View {
 
         Buf statusBuf = createBuf(
                 STATUS_BUFFER,
+                STATUS_BUFFER + ".txt",
                 -1,//indicates fixed
                 100,
                 BufferMode.NO_LINE_NUMBERS,
@@ -71,6 +73,7 @@ public class View {
 
         Buf headerBuf = createBuf(
                 HEADER_BUFFER,
+                HEADER_BUFFER + ".txt",
                 -1,
                 100,
                 BufferMode.UNSELECTABLE,
@@ -84,6 +87,7 @@ public class View {
 
         Buf mainBuf = createBuf(
                 MAIN_BUFFER,
+                MAIN_BUFFER + ".txt",
                 100,
                 65,
                 BufferMode.RELATIVE_HEIGHT,
@@ -113,13 +117,14 @@ public class View {
 
         Buf sideBuf = createBuf(
                 SIDE_BUFFER,
+                SIDE_BUFFER + ".txt",
                 100,
                 35,
                 BufferMode.RELATIVE_HEIGHT,
                 BufferMode.LEFT_BORDER,
                 BufferMode.TOP_BORDER);
         sideBufNo = sideBuf.getBufNo();
-        sideBuf.addRow("Side buf");
+        //sideBuf.addRow("Side buf");
 
         headerBuf.setTopBufs(List.of(statusBuf));
         mainBuf.setTopBufs(List.of(headerBuf));
@@ -158,9 +163,11 @@ public class View {
         });
     }
 
-    public Buf createBuf(String name, int percentHeight, int percentWidth, BufferMode...bufferModes) {
+    public Buf createBuf(String name, String filename, int percentHeight, int percentWidth, BufferMode...bufferModes) {
         int bufNum = buffers.size();
-        Buf buf = new Buf(name, bufNum,
+        Buf buf = new Buf(name,
+                filename,
+                bufNum,
                 new ScrollView(percentHeight, percentWidth),
                 events
         );
@@ -270,11 +277,10 @@ public class View {
         return buf.getGutterSize();
     }
 
-    private JavaSyntaxHighlighter syntaxHighlighter = new JavaSyntaxHighlighter();
     private void drawString(TextGraphics tg, Line line, int colOffset, int rowOffset, LinkedBlockingQueue<Future<?>> futures) {
-        //syntaxHighlighter.drawHighlightedCode(tg, line.getContent(), rowOffset, colOffset, futures);
-
-        tg.putString(colOffset, rowOffset, line.getContent());
+        syntaxHighlighter.drawHighlightedCode(tg, line.getContent(), rowOffset, colOffset, futures);
+//xxx
+        //tg.putString(colOffset, rowOffset, line.getContent());
     }
 
     private void generateColors(TextGraphics textGraphics, Buf buf) {

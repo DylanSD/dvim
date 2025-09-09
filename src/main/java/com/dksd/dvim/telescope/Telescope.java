@@ -88,7 +88,7 @@ public final class Telescope {
 
         this.timeout = builder.timeout;
         this.timeoutUnit = Objects.requireNonNull(builder.timeoutUnit);
-        this.matcher = builder.matcher;               // may be null → lazy init later
+        this.matcher = builder.matcher;   // may be null → lazy init later
         this.vKeyMaps = builder.vKeyMaps;
         this.executorService = builder.executorService;
 
@@ -131,12 +131,8 @@ public final class Telescope {
         currView = vimEng.getView(VimEng.START_VIEW);
         telescopeView = vimEng.getView(VimEng.TELESCOPE_VIEW);
 
-        System.out.println("Hash of curr view: "
-                + currView.getBufferByName(View.MAIN_BUFFER).hashCode());
-        System.out.println("Hash of telescopeView: "
-                + telescopeView.getBufferByName(View.MAIN_BUFFER).hashCode());
-
         vimEng.setView(telescopeView);
+        vimEng.setVimMode(VimMode.INSERT);
 
         inputBufNo   = telescopeView.getBufNoByName(View.SIDE_BUFFER);
         resultsBufNo = telescopeView.getBufNoByName(View.MAIN_BUFFER);

@@ -43,12 +43,12 @@ public class Buf {
     private final List<LineIndicator> lineIndicators = new ArrayList<>();
     private final Queue<VimEvent> eventQueue;
 
-    public Buf(String name, int bufNo, ScrollView scrollView, Queue<VimEvent> eventQueue) {
+    public Buf(String name, String filename, int bufNo, ScrollView scrollView, Queue<VimEvent> eventQueue) {
+        this.filename = filename;
         this.bufNo = bufNo;
         this.eventQueue = eventQueue;
         this.name = name;
         this.scrollView = scrollView;
-
     }
 
     public ScrollView getScrollView() {
@@ -95,7 +95,9 @@ public class Buf {
             sb.insert(col, str);
             lines.set(row, Line.of(line.getLineNumber(), sb.toString()));
             setCol(col + str.length());
-            eventQueue.add(new VimEvent(bufNo, EventType.BUF_CHANGE));
+            VimEvent event = new VimEvent(bufNo, EventType.BUF_CHANGE);
+            eventQueue.add(event);
+            System.out.println("Buf event: " + event);
         } catch (Exception ep) {
             ep.printStackTrace();
         }
