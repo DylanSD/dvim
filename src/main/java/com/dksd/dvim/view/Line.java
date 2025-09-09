@@ -55,4 +55,12 @@ public class Line {
     public void setLineNumber(int lineNumber) {
         this.lineNumber = lineNumber;
     }
+
+    @Override
+    public String toString() {
+        return "Line{" +
+                "lineNumber=" + lineNumber +
+                ", content='" + content + '\'' +
+                '}';
+    }
 }

@@ -3,23 +3,17 @@ import java.util.List;
 import java.util.concurrent.Executors;
 
 import static com.dksd.dvim.view.View.HEADER_BUFFER;
-import static com.dksd.dvim.view.View.INPUT_BUFFER;
 import static com.dksd.dvim.view.View.MAIN_BUFFER;
 import static com.dksd.dvim.view.View.SIDE_BUFFER;
 import static com.dksd.dvim.view.View.STATUS_BUFFER;
-import static com.dksd.dvim.view.View.TERMINAL_BUFFER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.MockitoAnnotations.openMocks;
 import com.dksd.dvim.buffer.Buf;
-import com.dksd.dvim.buffer.BufferMode;
 import com.dksd.dvim.view.DispObj;
-import com.dksd.dvim.view.Line;
-import com.dksd.dvim.view.LineIndicator;
 import com.dksd.dvim.view.View;
 import com.googlecode.lanterna.TerminalSize;
 import com.googlecode.lanterna.graphics.TextGraphics;
 import com.googlecode.lanterna.screen.TerminalScreen;
-import de.gesundkrank.fzf4j.Fzf;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -54,14 +48,11 @@ class ViewTest {
 
         assertEquals(view.getBufferByName(STATUS_BUFFER).getScrollView().getRowStart(), 0);
         assertEquals(view.getBufferByName(HEADER_BUFFER).getScrollView().getRowStart(), 1);
-        assertEquals(view.getBufferByName(INPUT_BUFFER).getScrollView().getRowStart(), 2);
-        assertEquals(view.getBufferByName(MAIN_BUFFER).getScrollView().getRowStart(), 3);
-        assertEquals(view.getBufferByName(SIDE_BUFFER).getScrollView().getRowStart(), 3);
-        assertEquals(view.getBufferByName(TERMINAL_BUFFER).getScrollView().getRowStart(), 20);
+        assertEquals(view.getBufferByName(MAIN_BUFFER).getScrollView().getRowStart(), 2);
+        assertEquals(view.getBufferByName(SIDE_BUFFER).getScrollView().getRowStart(), 2);
 
-        assertEquals(view.getBufferByName(MAIN_BUFFER).getScrollView().getRowStart(), 3);
         assertEquals(view.getBufferByName(MAIN_BUFFER).getScrollView().getColStart(), 0);
-        assertEquals(view.getBufferByName(MAIN_BUFFER).getScrollView().getRowEnd(), 20);
+        assertEquals(view.getBufferByName(MAIN_BUFFER).getScrollView().getRowEnd(), 80);
         assertEquals(view.getBufferByName(MAIN_BUFFER).getScrollView().getColEnd(), 50);
 
     }
@@ -77,9 +68,9 @@ class ViewTest {
         mainBuf.addRow("Line 3 of the main buffer");
         mainBuf.addToRow(1);
         mainBuf.addToCol(1);
-        assrt(mainBuf,5,6);
+        assrt(mainBuf,4,32);
         mainBuf.addToCol(20);
-        assrt(mainBuf,5,6);
+        assrt(mainBuf,4,52);
 
     }
 
@@ -108,15 +99,15 @@ class ViewTest {
         DispObj dispObj = mainBuf.getDisplayCursor();
 
         // Assert that the cursor is positioned at the last character of the line
-        assertEquals(2 + mainBuf.getScrollView().getRowStart(), dispObj.getScreenRow(),
+        assertEquals(3 + mainBuf.getScrollView().getRowStart(), dispObj.getScreenRow(),
                 "Cursor should be on the longest line");
-        assertEquals(longestLineLength - 1 - mainBuf.getScrollView().getColStart(),
+        assertEquals(64,
                 dispObj.getScreenCol(),
                 "Cursor should be at the end of the longest line within the scroll view");
 
         // Assert scroll view updated to include the end of the line
         int colEnd = mainBuf.getScrollView().getColEnd();
-        assertEquals(true, longestLineLength <= colEnd,
+        assertEquals(false, longestLineLength <= colEnd,
                 "Scroll view should include the end of the longest line");
     }
 

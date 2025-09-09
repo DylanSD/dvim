@@ -378,6 +378,9 @@ public class Buf {
     }
 
     private int getVirtualRow(int height) {
+        if (lines.isEmpty()) {
+            return 0;
+        }
         int fivePToBottom = (int) (height * 0.05);
         int stRow = Math.min(getRow() + fivePToBottom, lines.size()) - height;
         stRow = Math.max(0, stRow);
@@ -385,6 +388,9 @@ public class Buf {
     }
 
     private int getVirtualCol(int width) {
+        if (lines.isEmpty()) {
+            return 0;
+        }
         int fivePToRight = (int) (width * 0.05);
         int stCol = Math.min(getCol() + fivePToRight, lines.get(getRow()).getContent().length()) - width;
         stCol = Math.max(0, stCol);

@@ -100,9 +100,18 @@ public class VimEng {
         activeView.set(view.getName());
     }
 
-    public void executeFunction(String functionToExec) {
-        //TODO for example quit command
-        //or some api code even.
+    public void executeFunction(Buf activeBuf, String functionToExec) {
+        String[] params = getParams(functionToExec);
+        if ("write".equals(functionToExec)) {
+            activeBuf.writeFile();
+        } else if ("read".equals(functionToExec)) {
+            activeBuf.readFile(params[0]);
+        }
+    }
+
+    private String[] getParams(String functionToExec) {
+        //TODO
+        return null;
     }
 
     public void clearKeys() {

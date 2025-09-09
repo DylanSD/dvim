@@ -196,6 +196,7 @@ public final class Telescope {
                 is -> {
                     Line selected = currentSelLine.get();
                     resultFuture.complete(selected);
+                    System.out.println("Selected: " + selected);
                     return null;
                 }, true);
 //        vKeyMaps.reMap(List.of(VimMode.COMMAND), "d", "escape telescope",

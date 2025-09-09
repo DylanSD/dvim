@@ -24,7 +24,6 @@ import com.dksd.dvim.telescope.Telescope;
 import com.dksd.dvim.view.VimMode;
 import com.dksd.dvim.key.trie.Trie;
 import com.dksd.dvim.key.trie.TrieNode;
-import com.dksd.dvim.telescope.TeleResult;
 import com.dksd.dvim.view.Line;
 import com.googlecode.lanterna.input.KeyStroke;
 import com.googlecode.lanterna.input.KeyType;
@@ -264,8 +263,8 @@ public class VKeyMaps {
             return null;
         });
         putKeyMap(VimMode.COMMAND, ":", "open command window", s -> {
-            List<String> options = List.of("one", "two", "three", "four");//should be all commands
-            telescope(options, lineResult -> vimEng.executeFunction(lineResult.getContent()));
+            List<String> options = List.of("write", "read", "quit", "find", "grep");
+            telescope(options, lineResult -> vimEng.executeFunction(vimEng.getActiveBuf(), lineResult.getContent()));
             return null;
         });
         putKeyMap(VimMode.COMMAND, "<leader>fm", "find key mapping", s -> {
@@ -417,9 +416,9 @@ public class VKeyMaps {
             //TODO
             return null;//no mapping
         });
-        putKeyMap(VimMode.COMMAND, ":grep", "desc", s -> {
-            Consumer<List<TeleResult<String>>> resultConsumer =
-                    (str) -> {
+        /*putKeyMap(VimMode.COMMAND, ":grep", "desc", s -> {
+            //Consumer<List<TeleResult<String>>> resultConsumer =
+            //        (str) -> {
                         //TODO Does buf exist?
 //                    int newBuf = getView().vsplitRight(getActiveBufNo(), "new buf", BorderType.LEFT);
 //                    getView().getBuffer(newBuf).readFile(str.get(0).teleEntry.getDisplayLine());
@@ -428,7 +427,7 @@ public class VKeyMaps {
 //            teleScopeFactory.createRepeatable((lineSoFar) -> exec("grep", lineSoFar, Vars.getStrVar(Vars.CURRENT_DIR),
 //                "-R"), resultConsumer);
             return null;//no mapping
-        });
+        });*/
         putKeyMap(VimMode.COMMAND, ":get_routing_expr", "desc", s -> {
             List<String> output = exec("/Users/ddawkins/Developer/scripts/getRoutingConfig.sh");
 //            int newBuf = getView().vsplitRight(getActiveBufNo(), "expr_routing", BorderType.LEFT);
