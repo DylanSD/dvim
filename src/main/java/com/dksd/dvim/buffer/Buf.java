@@ -12,11 +12,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.dksd.dvim.view.DispObj;
@@ -41,7 +39,7 @@ public class Buf {
     private final ScrollView scrollView;
     private final List<Line> lines = Collections.synchronizedList(new ArrayList<>());
     private final AtomicInteger row = new AtomicInteger(0), col = new AtomicInteger(0);
-    private final Map<VimMode, Set<BufferMode>> bufferModes = new ConcurrentHashMap<>();
+    private final Set<BufferMode> bufferModes = new HashSet<>();
     private final List<LineIndicator> lineIndicators = new ArrayList<>();
     private final Queue<VimEvent> eventQueue;
 
@@ -171,19 +169,8 @@ public class Buf {
         eventQueue.add(new VimEvent(bufNo, EventType.BUF_CHANGE));
     }
 
-    public void addBufferMode(VimMode vimMode, BufferMode bufferMode) {
-
-        if (VimMode.ALL.equals(vimMode)) {
-            for (VimMode value : VimMode.values()) {
-                if (!VimMode.ALL.equals(value)) {
-                    bufferModes.computeIfAbsent(value, k -> new HashSet<>());
-                    this.bufferModes.get(value).add(bufferMode);
-                }
-            }
-        } else {
-            bufferModes.computeIfAbsent(vimMode, k -> new HashSet<>());
-            this.bufferModes.get(vimMode).add(bufferMode);
-        }
+    public void addBufferMode(BufferMode bufferMode) {
+        bufferModes.add(bufferMode);
     }
 
     @Override
@@ -321,7 +308,7 @@ public class Buf {
         return results;
     }
 
-    public Map<VimMode, Set<BufferMode>> getBufferModes() {
+    public Set<BufferMode> getBufferModes() {
         return bufferModes;
     }
 
@@ -406,9 +393,11 @@ public class Buf {
 
     public List<DispObj> getLinesToDisplay(VimMode vimMode) {
         List<DispObj> dispObjs = new ArrayList<>();
-        int width = getScrollView().getWidth() - 5 - 1;
+        int leftBorderWidth = getBorderWidths(BufferMode.LEFT_BORDER);
+        int topBorderWidth = getBorderWidths(BufferMode.TOP_BORDER);
+        int width = getScrollView().getWidth() - 5 - leftBorderWidth;
         int height = getScrollView().getHeight();
-        if (height > 1) height --;
+        if (height > 1) height -= topBorderWidth;
 
         int stRow = getVirtualRow(height);
         int stCol = getVirtualCol(width);
@@ -418,17 +407,25 @@ public class Buf {
             String croppedLine = str.substring(stCol, Math.min(str.length(), stCol + width));
 
             dispObjs.add(
-                    new DispObj(getOnScreenRow(rowDataIndex - stRow), getOnScreenCol(0), new Line(rowDataIndex, croppedLine)));
+                    new DispObj(getOnScreenRow(rowDataIndex - stRow, topBorderWidth), getOnScreenCol(0, leftBorderWidth), new Line(rowDataIndex, croppedLine)));
         }
         return dispObjs;
     }
 
-    private int getOnScreenCol(int colDataIndex) {
-        return colDataIndex + scrollView.getColStart() + 5 + 1;
+    public boolean containsBufferMode(BufferMode bufferMode) {
+        return bufferModes.contains(bufferMode);
     }
 
-    private int getOnScreenRow(int rowDataIndex) {
-        return scrollView.getRowStart() + rowDataIndex + 1;
+    private int getBorderWidths(BufferMode bufferMode) {
+        return containsBufferMode(bufferMode) ? 1 : 0;
+    }
+
+    private int getOnScreenCol(int colDataIndex, int leftBorderWidth) {
+        return colDataIndex + scrollView.getColStart() + 5 + leftBorderWidth;
+    }
+
+    private int getOnScreenRow(int rowDataIndex, int topBorderWidth) {
+        return scrollView.getRowStart() + rowDataIndex + topBorderWidth;
     }
 
     public DispObj getDisplayCursor() {

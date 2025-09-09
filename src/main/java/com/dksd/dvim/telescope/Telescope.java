@@ -138,7 +138,7 @@ public final class Telescope {
 
         vimEng.setView(telescopeView);
 
-        inputBufNo   = telescopeView.getBufNoByName(View.INPUT_BUFFER);
+        inputBufNo   = telescopeView.getBufNoByName(View.SIDE_BUFFER);
         resultsBufNo = telescopeView.getBufNoByName(View.MAIN_BUFFER);
 
         inputBuf   = telescopeView.getBuffer(inputBufNo);
@@ -148,7 +148,7 @@ public final class Telescope {
         resultsBuf.setLines(Line.convert(options));
 
         // 3️⃣  Initialise UI state (arrow on first line, focus input)
-        telescopeView.setActiveBuf(View.INPUT_BUFFER);
+        telescopeView.setActiveBuf(View.SIDE_BUFFER);
         moveArrowInResults(resultsBuf, 0, currentSelected, currentSelLine);
     }
 

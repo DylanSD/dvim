@@ -37,9 +37,7 @@ public class View {
 
     public static final String STATUS_BUFFER = "status";
     public static final String HEADER_BUFFER = "header";
-    public static final String INPUT_BUFFER = "input";
     public static final String MAIN_BUFFER = "main";
-    public static final String TERMINAL_BUFFER = "terminal";//completes etc
     public static final String SIDE_BUFFER = "side"; //used for text complete..and editing lists
     public static final TextColor.Indexed HIGHLIGHT_BG_COLOR = new TextColor.Indexed(237);
     public static final TextColor.Indexed HIGHLIGHT_MATCHED_POS = new TextColor.Indexed(70);
@@ -52,10 +50,8 @@ public class View {
     private AtomicInteger activeBufNo = new AtomicInteger(-1);
     private int statusBufNo = -1;
     private int headerBufNo = -1;
-    private int inputBufNo = -1;
     private int mainBufNo = -1;
     private int sideBufNo = -1;
-    private int termBufNo = -1;
     private final ExecutorService executor;
 
     public View(String viewName, TerminalScreen screen, ExecutorService executor) {
@@ -86,23 +82,10 @@ public class View {
         headerBuf.addRow("1 - file | 2 - file 2");
         headerBufNo = headerBuf.getBufNo();
 
-        Buf inputBuf = createBuf(
-                INPUT_BUFFER,
-                1,
-                100,
-                BufferMode.NO_LINE_NUMBERS,
-                BufferMode.FIXED_HEIGHT,
-                BufferMode.LEFT_BORDER,
-                BufferMode.RIGHT_BORDER,
-                BufferMode.ABS_POS);
-        inputBuf.addIndicator(new LineIndicator(">", -1, LineIndicator.IndicatorType.GUTTER));
-        inputBuf.addRow("");
-        inputBufNo = inputBuf.getBufNo();
-
         Buf mainBuf = createBuf(
                 MAIN_BUFFER,
-                70,
-                50,
+                100,
+                65,
                 BufferMode.RELATIVE_HEIGHT,
                 BufferMode.LEFT_BORDER,
                 BufferMode.RIGHT_BORDER,
@@ -130,33 +113,19 @@ public class View {
 
         Buf sideBuf = createBuf(
                 SIDE_BUFFER,
-                70,
-                20,
+                100,
+                35,
                 BufferMode.RELATIVE_HEIGHT,
                 BufferMode.LEFT_BORDER,
                 BufferMode.TOP_BORDER);
         sideBufNo = sideBuf.getBufNo();
         sideBuf.addRow("Side buf");
 
-        Buf termBuf = createBuf(
-                TERMINAL_BUFFER,
-                10,
-                100,
-                BufferMode.NO_LINE_NUMBERS,
-                BufferMode.TOP_BORDER);
-        termBufNo = termBuf.getBufNo();
-        termBuf.addIndicator(new LineIndicator(">", -1, LineIndicator.IndicatorType.GUTTER));
-        termBuf.addRow("Terminal buf");
-
         headerBuf.setTopBufs(List.of(statusBuf));
-        inputBuf.setTopBufs(List.of(headerBuf));
-        mainBuf.setTopBufs(List.of(inputBuf));
-        mainBuf.setBotBufs(List.of(termBuf));
-        sideBuf.setTopBufs(List.of(inputBuf));
-        sideBuf.setBotBufs(List.of(termBuf));
+        mainBuf.setTopBufs(List.of(headerBuf));
+        sideBuf.setTopBufs(List.of(headerBuf));
         sideBuf.setLeftBufs(List.of(mainBuf));
         mainBuf.setRightBufs(List.of(sideBuf));
-        termBuf.setTopBufs(List.of(mainBuf, sideBuf));
 
         calcScrollView(screen.getTerminalSize().getColumns(), screen.getTerminalSize().getRows());
         fitScrollView(screen.getTerminalSize().getColumns(), screen.getTerminalSize().getRows());
@@ -196,7 +165,7 @@ public class View {
                 events
         );
         buffers.put(bufNum, buf);
-        setBufferPermissions(VimMode.ALL, bufNum, bufferModes);
+        setBufferPermissions(bufNum, bufferModes);
         return buf;
     }
 
@@ -224,12 +193,10 @@ public class View {
             screen.clear();
             Buf stBuf = buffers.get(statusBufNo);
             Buf hBuf = buffers.get(headerBufNo);
-            Buf inBuf = buffers.get(inputBufNo);
             Buf mbuf = buffers.get(mainBufNo);
             Buf sideBuf = buffers.get(sideBufNo);
-            Buf termBuf = buffers.get(termBufNo);
 
-            for (Buf buf : List.of(stBuf, hBuf, inBuf, mbuf, sideBuf, termBuf)) {
+            for (Buf buf : List.of(stBuf, hBuf, mbuf, sideBuf)) {
                 drawBuffer(screen, textGraphics, vimMode, buf, futures);
             }
 
@@ -288,13 +255,13 @@ public class View {
         int coled = buf.getScrollView().getColEnd();
         int rowed = buf.getScrollView().getRowEnd();
 
-        if (containsBufferMode(vimMode, buf, BufferMode.LEFT_BORDER)) {
+        if (buf.containsBufferMode(BufferMode.LEFT_BORDER)) {
             drawVertical(colst + gutterSize, rowst, rowed, textGraphics);
         }
-        if (containsBufferMode(vimMode, buf, BufferMode.RIGHT_BORDER)) {
+        if (buf.containsBufferMode(BufferMode.RIGHT_BORDER)) {
             drawVertical(coled, rowst, rowed, textGraphics);
         }
-        if (containsBufferMode(vimMode, buf, BufferMode.TOP_BORDER)) {
+        if (buf.containsBufferMode(BufferMode.TOP_BORDER)) {
             drawHorizontal(colst, coled, rowst, textGraphics);
         }
     }
@@ -328,19 +295,12 @@ public class View {
                 gutter.append(lineIndicator.getIndicatorStr());
             }
         }
-        if (!containsBufferMode(vimMode, buf, BufferMode.NO_LINE_NUMBERS)) {
+        if (!buf.containsBufferMode(BufferMode.NO_LINE_NUMBERS)) {
             String numStr = Integer.toString(line.getLineNumber());
             gutter.append(" ".repeat(Math.max(0, gutter.length() - numStr.length())));
             gutter.append(numStr);
         }
         putStr(screen, gutter.toString(), colst, i + rowOffset);
-    }
-
-    private boolean containsBufferMode(VimMode vimMode, Buf buf, BufferMode bufferMode) {
-        if (buf.getBufferModes().get(vimMode) != null) {
-            return buf.getBufferModes().get(vimMode).contains(bufferMode);
-        }
-        return false;
     }
 
     private static void placeCursor(TerminalScreen screen, int x, int y) {
@@ -384,9 +344,9 @@ public class View {
         return buffers.get(statusBufNo);
     }
 
-    public void setBufferPermissions(VimMode vimMode, int bufNo, BufferMode... bufferMode) {
+    public void setBufferPermissions(int bufNo, BufferMode... bufferMode) {
         for (BufferMode mode : bufferMode) {
-            buffers.get(bufNo).addBufferMode(vimMode, mode);
+            buffers.get(bufNo).addBufferMode(mode);
         }
     }
 
@@ -447,12 +407,12 @@ public class View {
             return false;
         }
         View view = (View) o;
-        return activeBufNo == view.activeBufNo && statusBufNo == view.statusBufNo && headerBufNo == view.headerBufNo && inputBufNo == view.inputBufNo && Objects.equals(logger, view.logger) && Objects.equals(name, view.name) && Objects.equals(buffers, view.buffers) && Objects.equals(events, view.events) && Objects.equals(eventListeners, view.eventListeners) && Objects.equals(executor, view.executor);
+        return activeBufNo == view.activeBufNo && statusBufNo == view.statusBufNo && headerBufNo == view.headerBufNo && Objects.equals(logger, view.logger) && Objects.equals(name, view.name) && Objects.equals(buffers, view.buffers) && Objects.equals(events, view.events) && Objects.equals(eventListeners, view.eventListeners) && Objects.equals(executor, view.executor);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(logger, name, buffers, events, eventListeners, activeBufNo, statusBufNo, headerBufNo, inputBufNo, executor);
+        return Objects.hash(logger, name, buffers, events, eventListeners, activeBufNo, statusBufNo, headerBufNo, executor);
     }
 
     public void setActiveBuf(String name) {
@@ -481,17 +441,15 @@ public class View {
 
     public void reset() {
         eventListeners.clear();
-        buffers.get(inputBufNo).setLines(Collections.emptyList());
+        buffers.get(sideBufNo).setLines(Collections.emptyList());
         buffers.get(mainBufNo).setLines(Collections.emptyList());
     }
 
     public void calcScrollView(int screenWidth, int screenHeight) {
         buffers.get(statusBufNo).setScrollView(0, 1, 0, screenWidth);
         buffers.get(headerBufNo).setScrollView(1, 2, 0, screenWidth);
-        buffers.get(inputBufNo).setScrollView(2, 3, 0, screenWidth);
-        buffers.get(mainBufNo).setScrollView(3, 20, 0, screenWidth / 2);
-        buffers.get(sideBufNo).setScrollView(3, 20, (screenWidth / 2) + 1, screenWidth);
-        buffers.get(termBufNo).setScrollView(20, screenHeight, 0, screenWidth);
+        buffers.get(mainBufNo).setScrollView(2, screenHeight, 0, screenWidth / 2);
+        buffers.get(sideBufNo).setScrollView(2, screenHeight, (screenWidth / 2) + 1, screenWidth);
     }
 
     public void fitScrollView(int screenWidth, int screenHeight) {
@@ -501,18 +459,14 @@ public class View {
         int newEndRow = buffers.get(mainBufNo).getScrollView().getRowStart() + mainHeight;
         buffers.get(mainBufNo).getScrollView().setRowEnd(newEndRow);
         buffers.get(sideBufNo).getScrollView().setRowEnd(newEndRow);
-        buffers.get(termBufNo).getScrollView().setRowStart(newEndRow);
-        buffers.get(termBufNo).getScrollView().setRowEnd(screenHeight);
 
         int mainWidth = (buffers.get(mainBufNo).getScrollView().getPercentOfScreenWidth() * screenWidth) / 100;
         int newEndCol = buffers.get(mainBufNo).getScrollView().getColStart() + mainWidth;
         buffers.get(mainBufNo).getScrollView().setColEnd(newEndCol);
         buffers.get(sideBufNo).getScrollView().setColStart(newEndCol + 1);
         buffers.get(sideBufNo).getScrollView().setColEnd(screenWidth);
-        buffers.get(inputBufNo).getScrollView().setColEnd(screenWidth);
         buffers.get(headerBufNo).getScrollView().setColEnd(screenWidth);
         buffers.get(statusBufNo).getScrollView().setColEnd(screenWidth);
-        buffers.get(termBufNo).getScrollView().setColEnd(screenWidth);
     }
 
     public void expandScrollView(int topD, int botD, int leftD, int rightD) {
