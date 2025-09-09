@@ -131,7 +131,7 @@ public class View {
         Buf sideBuf = createBuf(
                 SIDE_BUFFER,
                 70,
-                50,
+                20,
                 BufferMode.RELATIVE_HEIGHT,
                 BufferMode.LEFT_BORDER,
                 BufferMode.TOP_BORDER);
@@ -158,8 +158,8 @@ public class View {
         mainBuf.setRightBufs(List.of(sideBuf));
         termBuf.setTopBufs(List.of(mainBuf, sideBuf));
 
-        calcScrollView(100, 40);
-
+        calcScrollView(screen.getTerminalSize().getColumns(), screen.getTerminalSize().getRows());
+        fitScrollView(screen.getTerminalSize().getColumns(), screen.getTerminalSize().getRows());
         /*
         int popoverBufNo = 5;
         buffers.put(popoverBufNo, new Buf(POPOVER_BUFFER, popoverBufNo,
@@ -215,13 +215,10 @@ public class View {
     LinkedBlockingQueue<Future<?>> futures = new LinkedBlockingQueue<>();
     public void draw(TerminalScreen screen, VimMode vimMode) {
         long st = System.currentTimeMillis();
-        logger.info("Drawing view: " + name);
         futures.clear();
 
         screen.doResizeIfNecessary();
         TextGraphics textGraphics = screen.newTextGraphics();
-        int screenHeight = screen.getTerminalSize().getRows();
-        int screenWidth = screen.getTerminalSize().getColumns();
 
         try {
             screen.clear();
@@ -240,7 +237,7 @@ public class View {
                 future.get();
             }
             long ed = System.currentTimeMillis();
-            System.out.println("Time taken to render in parallel: " + (ed - st) + " screen size: " + screenWidth + ", " + screenHeight);
+            //System.out.println("Time taken to render in parallel: " + (ed - st) + " screen size: " + screenWidth + ", " + screenHeight);
             //Draw popover buffer now. It should be below the current row unless no space then above.
             //drawPopoverBuf(screen, rowOffset, colOffset, screenWidth, screenHeight);
             //May be too hard...
@@ -266,12 +263,11 @@ public class View {
 
         for (int i = 0; i < dispLineInclGutters.size(); i++) {
             DispObj dispObj = dispLineInclGutters.get(i);
-            futures.add(executor.submit(() -> {
                 drawString(textGraphics,
                         dispObj.getContent(),
                         dispObj.getScreenCol(),
-                        dispObj.getScreenRow());
-            }));
+                        dispObj.getScreenRow(),
+                        futures);
         }
         if (activeBufNo.get() == buf.getBufNo()) {
             DispObj cursor = buf.getDisplayCursor();
@@ -307,10 +303,11 @@ public class View {
         return buf.getGutterSize();
     }
 
-    private void drawString(TextGraphics tg, Line line, int colOffset, int rowOffset) {
-        JavaSyntaxHighlighter syntaxHighlighter = new JavaSyntaxHighlighter();
-        syntaxHighlighter.drawHighlightedCode(tg, line.getContent(), rowOffset, colOffset);
-        //putStr(screen, line.getContent(), colOffset, rowOffset);
+    private JavaSyntaxHighlighter syntaxHighlighter = new JavaSyntaxHighlighter();
+    private void drawString(TextGraphics tg, Line line, int colOffset, int rowOffset, LinkedBlockingQueue<Future<?>> futures) {
+        //syntaxHighlighter.drawHighlightedCode(tg, line.getContent(), rowOffset, colOffset, futures);
+
+        tg.putString(colOffset, rowOffset, line.getContent());
     }
 
     private void generateColors(TextGraphics textGraphics, Buf buf) {

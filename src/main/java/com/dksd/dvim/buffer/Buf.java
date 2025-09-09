@@ -433,11 +433,6 @@ public class Buf {
 
     public DispObj getDisplayCursor() {
 
-        // actual file content
-        // virtual view
-        // scroll view
-        //virtualView.updateVirtualView();
-
         int width = getScrollView().getWidth();
         int height = getScrollView().getHeight();
 

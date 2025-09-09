@@ -4,6 +4,8 @@ import com.catppuccin.Palette;
 import com.googlecode.lanterna.TextColor;
 import com.googlecode.lanterna.graphics.TextGraphics;
 
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -20,7 +22,7 @@ public class JavaSyntaxHighlighter {
     private final TextColor stringColor  = rgbFromPalette(Palette.MOCHA.getGreen().getRGBComponents());
     private final TextColor commentColor = rgbFromPalette(Palette.MOCHA.getYellow().getRGBComponents());
     private final TextColor numberColor  = rgbFromPalette(Palette.MOCHA.getCrust().getRGBComponents());
-    private final TextColor baseColor    = rgbFromPalette(Palette.MOCHA.getBase().getRGBComponents());
+    private final TextColor baseColor    = rgbFromPalette(Palette.MOCHA.getMantle().getRGBComponents());
 
     // Composite regex for all patterns
     private Pattern pattern = Pattern.compile(COMMENT + "|" + STRING + "|" + KEYWORDS + "|" + NUMBER);
@@ -32,7 +34,11 @@ public class JavaSyntaxHighlighter {
     /**
      * Draws syntax-highlighted code to a Lanterna TextGraphics
      */
-    public void drawHighlightedCode(TextGraphics tg, String code, int startRow, int startCol) {
+    public void drawHighlightedCode(TextGraphics tg, String code, int startRow, int startCol, LinkedBlockingQueue<Future<?>> futures) {
+
+        //Later add this back somehow
+        //futures.add(executor.submit(() -> {
+        //}));
 
         // Tokenize by regex application order: comments → strings → keywords → numbers
         String[] lines = code.split("\n");
@@ -47,22 +53,22 @@ public class JavaSyntaxHighlighter {
             while (matcher.find()) {
                 // Print text before the match in base color
                 String before = line.substring(lastIndex, matcher.start());
-                tg.setForegroundColor(stringColor);
+                tg.setForegroundColor(baseColor);
                 tg.putString(col, row, before);
                 col += before.length();
 
                 // Print the match with its color
                 String match = matcher.group();
                 if (match.matches(COMMENT)) {
-                    tg.setForegroundColor(stringColor);
+                    tg.setForegroundColor(commentColor);
                 } else if (match.matches(STRING)) {
                     tg.setForegroundColor(stringColor);
                 } else if (match.matches(KEYWORDS)) {
-                    tg.setForegroundColor(stringColor);
+                    tg.setForegroundColor(keywordColor);
                 } else if (match.matches(NUMBER)) {
-                    tg.setForegroundColor(stringColor);
+                    tg.setForegroundColor(numberColor);
                 } else {
-                    tg.setForegroundColor(stringColor);
+                    tg.setForegroundColor(baseColor);
                 }
                 tg.putString(col, row, match);
                 col += match.length();
@@ -73,12 +79,12 @@ public class JavaSyntaxHighlighter {
             // Remainder of the line
             if (lastIndex < line.length()) {
                 String remainder = line.substring(lastIndex);
-                tg.setForegroundColor(stringColor);
+                tg.setForegroundColor(baseColor);
                 tg.putString(col, row, remainder);
             }
 
             row++;
         }
-        tg.setForegroundColor(stringColor);
+        tg.setForegroundColor(baseColor);
     }
 }

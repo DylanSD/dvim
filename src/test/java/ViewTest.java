@@ -83,6 +83,44 @@ class ViewTest {
 
     }
 
+    @Test
+    void testCursorMovesToEndOfLongestLineAndScrolls() {
+        Buf mainBuf = view.getBufferByName(MAIN_BUFFER);
+        mainBuf.getLinesDangerous().clear();
+
+        // Add lines, one deliberately very long
+        mainBuf.addRow("Short line");
+        mainBuf.addRow("This is a medium length line");
+        String longLine = "This is the longest line in the buffer, intentionally very long to test scrolling behavior when the cursor moves to the end";
+        mainBuf.addRow(longLine);
+        mainBuf.addRow("Another short one");
+
+        // Move cursor down to the longest line (third row, index 2)
+        mainBuf.addToRow(2);
+
+        // Walk cursor across the longest line using addToCol
+        int longestLineLength = longLine.length();
+        for (int i = 0; i < longestLineLength; i++) {
+            mainBuf.addToCol(1);
+        }
+
+        // Get cursor display position
+        DispObj dispObj = mainBuf.getDisplayCursor();
+
+        // Assert that the cursor is positioned at the last character of the line
+        assertEquals(2 + mainBuf.getScrollView().getRowStart(), dispObj.getScreenRow(),
+                "Cursor should be on the longest line");
+        assertEquals(longestLineLength - 1 - mainBuf.getScrollView().getColStart(),
+                dispObj.getScreenCol(),
+                "Cursor should be at the end of the longest line within the scroll view");
+
+        // Assert scroll view updated to include the end of the line
+        int colEnd = mainBuf.getScrollView().getColEnd();
+        assertEquals(true, longestLineLength <= colEnd,
+                "Scroll view should include the end of the longest line");
+    }
+
+
     private void assrt(Buf mainBuf, int row, int col) {
         DispObj dispObj = mainBuf.getDisplayCursor();
 
