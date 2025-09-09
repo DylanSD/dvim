@@ -62,6 +62,12 @@ public class VKeyMaps {
             keyStrokeToStringMapping.put(
                     new KeyStroke(Character.toUpperCase((char) i), false, false, true),
                     "<s-" + chr.toUpperCase() + ">");
+            keyStrokeToStringMapping.put(
+                    new KeyStroke(Character.toUpperCase((char) i), false, true, false),
+                    "<a-" + chr + ">");
+            keyStrokeToStringMapping.put(
+                    new KeyStroke(Character.toUpperCase((char) i), false, true, true),
+                    "<a-" + chr.toUpperCase() + ">");
             putKeyMap(List.of(VimMode.INSERT, VimMode.SEARCH, VimMode.FUZZY_FIND), "<s-" + chr.toUpperCase() + ">", "Shift key mapping",
                     s -> {
                         vimEng.getActiveBuf().insertIntoLine(chr.toUpperCase());
@@ -105,11 +111,18 @@ public class VKeyMaps {
         keyStrokeToStringMapping.put(new KeyStroke(KeyType.End, false, false, false), "<end>");
         keyStrokeToStringMapping.put(new KeyStroke(KeyType.ArrowLeft, false, false, false),
                 "<left>");
+        keyStrokeToStringMapping.put(new KeyStroke(KeyType.ArrowLeft, false, true, false),
+                "<a-left>");
         keyStrokeToStringMapping.put(new KeyStroke(KeyType.ArrowRight, false, false, false),
                 "<right>");
+        keyStrokeToStringMapping.put(new KeyStroke(KeyType.ArrowRight, false, true, false),
+                "<a-right>");
         keyStrokeToStringMapping.put(new KeyStroke(KeyType.ArrowUp, false, false, false), "<up>");
+        keyStrokeToStringMapping.put(new KeyStroke(KeyType.ArrowUp, false, true, false), "<a-up>");
         keyStrokeToStringMapping.put(new KeyStroke(KeyType.ArrowDown, false, false, false),
                 "<down>");
+        keyStrokeToStringMapping.put(new KeyStroke(KeyType.ArrowDown, false, true, false),
+                "<a-down>");
 
         createSimpleCharMappings();
 
@@ -173,14 +186,14 @@ public class VKeyMaps {
             vimEng.deleteInLine(1);
             return null;//no mapping
         }, true);
-        putKeyMap(VimMode.COMMAND, "w", "move forward a word", s -> {
+        putKeyMap(VimMode.COMMAND, List.of("w", "<a-right>"), "move forward a word", s -> {
             Line line = vimEng.getCurrentLine();
             int col = vimEng.getCol();
             int offset = line.getContent().indexOf(" ", col);
             vimEng.moveCursor(0, offset - col + 1);
             return null;//no mapping
         });
-        putKeyMap(VimMode.COMMAND, "b", "move backward a word", s -> {
+        putKeyMap(VimMode.COMMAND, List.of("b", "<a-left>"), "move backward a word", s -> {
             Line line = vimEng.getCurrentLine();
             int col = vimEng.getCol();
             for (int i = col; i >= 0; i--) {
@@ -611,6 +624,21 @@ public class VKeyMaps {
         node.setHideMapping(hideMap);
         keysMappings.add(left);
         return node;
+    }
+
+    public List<TrieNode> putKeyMap(VimMode vimMode,
+                                    List<String> lefts,
+                                    String description,
+                                    Function<String, String> rightFunc,
+                                    boolean systemMap) {
+        return putKeyMap(List.of(vimMode), lefts, description, rightFunc, systemMap);
+    }
+
+    public List<TrieNode> putKeyMap(VimMode vimMode,
+                                    List<String> lefts,
+                                    String description,
+                                    Function<String, String> rightFunc) {
+        return putKeyMap(List.of(vimMode), lefts, description, rightFunc, false);
     }
 
     public List<TrieNode> putKeyMap(List<VimMode> vimModes,

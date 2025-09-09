@@ -1,6 +1,7 @@
 package com.dksd.dvim.engine;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -110,8 +111,9 @@ public class VimEng {
     }
 
     private String[] getParams(String functionToExec) {
-        //TODO
-        return null;
+        String[] tokens = functionToExec.split(" ");
+        String[] tail = Arrays.copyOfRange(tokens, 2, tokens.length);
+        return tail;
     }
 
     public void clearKeys() {
