@@ -196,7 +196,7 @@ public class VKeyMaps {
         putKeyMap(VimMode.COMMAND, List.of("b", "<a-left>"), "move backward a word", s -> {
             Line line = vimEng.getCurrentLine();
             int col = vimEng.getCol();
-            for (int i = col; i >= 0; i--) {
+            for (int i = col - 1; i >= 0; i--) {
                 if (' ' == line.getContent().charAt(i)) {
                     vimEng.moveCursor(0, i - col);
                     return null;
