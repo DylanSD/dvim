@@ -111,10 +111,20 @@ public class VimEng {
     }
 
     private String[] getParams(String functionToExec) {
-        String[] tokens = functionToExec.split(" ");
-        String[] tail = Arrays.copyOfRange(tokens, 2, tokens.length);
-        return tail;
+        if (functionToExec == null || functionToExec.isBlank()) {
+            return new String[0]; // nothing to return
+        }
+
+        // Split on one-or-more spaces to avoid empty tokens
+        String[] tokens = functionToExec.trim().split("\\s+");
+
+        if (tokens.length <= 2) {
+            return new String[0]; // no parameters
+        }
+
+        return Arrays.copyOfRange(tokens, 2, tokens.length);
     }
+
 
     public void clearKeys() {
         keyStrokes.clear();

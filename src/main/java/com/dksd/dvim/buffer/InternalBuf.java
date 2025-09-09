@@ -18,27 +18,34 @@ public class InternalBuf {
     }
 
     public boolean isEmpty() {
-        return get().isEmpty();
+        return getCurrBuf().isEmpty();
     }
 
     public int size() {
-        return get().size();
+        return getCurrBuf().size();
     }
 
     public void remove(int row) {
-        pushAndGet().remove(row);
+        if (row >= 0 && row < getCurrBuf().size()) {
+            pushAndGet().remove(row);
+        }
     }
 
     public void set(int row, Line line) {
-        pushAndGet().set(row, line);
+        if (row >= 0 && row < getCurrBuf().size()) {
+            pushAndGet().set(row, line);
+        }
     }
 
-    public Line get(int row) {
-        return get().get(row);
+    public Line getCurrBuf(int row) {
+        if (row >= 0 && row < getCurrBuf().size()) {
+            return getCurrBuf().get(row);
+        }
+        return null; // sane default
     }
 
     public void clear() {
-        get().clear();
+        getCurrBuf().clear();
     }
 
     public void addAll(List<Line> convert) {
@@ -50,11 +57,16 @@ public class InternalBuf {
     }
 
     public void add(int indx, Line line) {
+        if (indx < 0) {
+            indx = 0;
+        } else if (indx > getCurrBuf().size()) {
+            indx = getCurrBuf().size(); // append to end
+        }
         pushAndGet().add(indx, line);
     }
 
     public List<Line> getLines() {
-        return get();
+        return getCurrBuf();
     }
 
     public void undo() {
@@ -63,7 +75,7 @@ public class InternalBuf {
         }
     }
 
-    public List<Line> get() {
+    public List<Line> getCurrBuf() {
         if (undoStack.isEmpty()) {
             undoStack.push(Collections.synchronizedList(new ArrayList<>()));
         }
@@ -77,6 +89,6 @@ public class InternalBuf {
                 undoStack.remove(MAX_UNDO_LEVEL - 1);
             }
         }
-        return get();
+        return getCurrBuf();
     }
 }

@@ -90,7 +90,7 @@ public class Buf {
             if (lines.isEmpty()) {
                 lines.add(new Line(0, "", null));
             }
-            Line line = lines.get(row);
+            Line line = lines.getCurrBuf(row);
             StringBuilder sb = new StringBuilder(line.getContent());
             sb.insert(col, str);
             lines.set(row, Line.of(line.getLineNumber(), sb.toString(), line.getIndicatorStr()));
@@ -132,7 +132,7 @@ public class Buf {
     public void deleteInLine(int numChars) {
         int row = getRow();
         int col = getCol();
-        Line line = lines.get(row);
+        Line line = lines.getCurrBuf(row);
         try {
             if (line != null && !line.isEmpty() && col + numChars <= line.length()) {
                 String lStr = line.getContent().substring(0, col) + line.getContent().substring(col + numChars);
@@ -151,11 +151,11 @@ public class Buf {
             lines.add(new Line(0,"", null));
             setRow(0);
         }
-        return lines.get(row);
+        return lines.getCurrBuf(row);
     }
 
     public void replaceLine(int row, String replaceStr) {
-        lines.get(row).setContent(replaceStr);
+        lines.getCurrBuf(row).setContent(replaceStr);
         eventQueue.add(new VimEvent(bufNo, EventType.BUF_CHANGE));
     }
 
@@ -302,7 +302,7 @@ public class Buf {
         line.setContent(line.getContent().substring(0, col));
         insertStr(row + 1, restOfline);
         for (int i = row; i < lines.size(); i++) {
-            lines.get(i).setLineNumber(i);
+            lines.getCurrBuf(i).setLineNumber(i);
         }
         incrRow();
         setCol(0);
@@ -366,7 +366,7 @@ public class Buf {
             return 0;
         }
         int fivePToRight = (int) (width * 0.05);
-        int stCol = Math.min(col + fivePToRight, lines.get(row).getContent().length()) - width;
+        int stCol = Math.min(col + fivePToRight, lines.getCurrBuf(row).getContent().length()) - width;
         stCol = Math.max(0, stCol);
         return stCol;
     }
@@ -383,7 +383,7 @@ public class Buf {
         int stCol = getVirtualCol(getRow(), getCol(), width);
 
         for (int rowDataIndex = stRow; rowDataIndex < stRow + height && rowDataIndex < lines.size(); rowDataIndex++) {
-            Line lineStr = lines.get(rowDataIndex);
+            Line lineStr = lines.getCurrBuf(rowDataIndex);
             String str = lineStr.getContent();
             String croppedLine = str.substring(stCol, Math.min(str.length(), stCol + width));
 
