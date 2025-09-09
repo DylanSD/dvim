@@ -22,7 +22,7 @@ class BufTest {
     @BeforeEach
     void setUp() {
         Queue<VimEvent> queue = new ConcurrentLinkedDeque<>();
-        buf = new Buf("test", 0, new ScrollView(0, 0), queue);
+        buf = new Buf("test","filename", 0,  new ScrollView(0, 0), queue);
         buf.getScrollView().setRowStart(0);
         buf.getScrollView().setColStart(0);
         buf.getScrollView().setRowEnd(1);

@@ -177,19 +177,18 @@ public class VKeyMaps {
             Line line = vimEng.getCurrentLine();
             int col = vimEng.getCol();
             int offset = line.getContent().indexOf(" ", col);
-            vimEng.moveCursor(0, offset);
+            vimEng.moveCursor(0, offset - col + 1);
             return null;//no mapping
         });
         putKeyMap(VimMode.COMMAND, "b", "move backward a word", s -> {
             Line line = vimEng.getCurrentLine();
             int col = vimEng.getCol();
-            int offset = 0;
             for (int i = col; i >= 0; i--) {
-                if (Character.isLetter(line.getContent().charAt(i))) {
-                    offset++;
+                if (' ' == line.getContent().charAt(i)) {
+                    vimEng.moveCursor(0, i - col);
+                    return null;
                 }
             }
-            vimEng.moveCursor(0, -offset);
             return null;//no mapping
         });
         putKeyMap(VimMode.COMMAND, "yy", "copy line to mem", s -> {
