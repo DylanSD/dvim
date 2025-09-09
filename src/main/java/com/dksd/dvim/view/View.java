@@ -194,7 +194,7 @@ public class View {
     }
 
     LinkedBlockingQueue<Future<?>> futures = new LinkedBlockingQueue<>();
-    public void draw(TerminalScreen screen, VimMode vimMode) {
+    public void draw(TerminalScreen screen) {
         long st = System.currentTimeMillis();
         futures.clear();
 
@@ -209,7 +209,7 @@ public class View {
             Buf sideBuf = buffers.get(sideBufNo);
 
             for (Buf buf : List.of(stBuf, hBuf, mbuf, sideBuf)) {
-                drawBuffer(screen, textGraphics, vimMode, buf, futures);
+                drawBuffer(screen, textGraphics, buf, futures);
             }
 
             for (Future<?> future : futures) {
@@ -232,13 +232,12 @@ public class View {
 
     private void drawBuffer(TerminalScreen screen,
                             TextGraphics textGraphics,
-                            VimMode vimMode,
                             Buf buf,
                             LinkedBlockingQueue<Future<?>> futures) {
 
-        List<DispObj> dispLineInclGutters = buf.getLinesToDisplay(vimMode);
+        List<DispObj> dispLineInclGutters = buf.getLinesToDisplay();
 
-        drawGutters(textGraphics, vimMode, buf);
+        drawGutters(textGraphics, buf);
 
         for (int i = 0; i < dispLineInclGutters.size(); i++) {
             DispObj dispObj = dispLineInclGutters.get(i);
@@ -260,7 +259,7 @@ public class View {
         }
     }
 
-    private void drawGutters(TextGraphics textGraphics, VimMode vimMode, Buf buf) {
+    private void drawGutters(TextGraphics textGraphics, Buf buf) {
         int gutterSize = buf.getGutterSize();
         int colst = buf.getScrollView().getColStart();
         int rowst = buf.getScrollView().getRowStart();

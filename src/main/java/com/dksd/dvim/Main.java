@@ -106,7 +106,7 @@ public class Main {
                 //textGraphics.putString(5 + "Terminal Size: ".length(), 3, newSize.toString());
                 //textGraphics.putString(5 + "Terminal Size: ".length(), 3, newSize.toString());
                 ve.getView().fitScrollView(newSize.getColumns(), newSize.getRows());
-                ve.getView().draw(screen, ve.getVimMode());
+                ve.getView().draw(screen);
             });
 
             ///textGraphics.putString(5, 4, "Last Keystroke: ", SGR.BOLD);
@@ -128,7 +128,7 @@ public class Main {
              */
 
             do {
-                ve.getView().draw(screen, ve.getVimMode());
+                ve.getView().draw(screen);
                 KeyStroke key = screen.readInput();
                 //long st = System.currentTimeMillis();
                 if (key != null) {

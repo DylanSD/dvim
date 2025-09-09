@@ -52,7 +52,7 @@ public class VimEng {
             long st = System.currentTimeMillis();
             int hash = getView().hashCode();
             if (hash != hashDrawn.get()) {
-                getView().draw(terminalScreen, vimMode.get());
+                getView().draw(terminalScreen);
                 hash = getView().hashCode();
                 hashDrawn.set(hash);
                 logger.info("Trigger hash key change draw: " + st);

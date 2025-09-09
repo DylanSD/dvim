@@ -27,7 +27,6 @@ import com.dksd.dvim.view.ScrollView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 public class Buf {
 
     private Logger logger = LoggerFactory.getLogger(Buf.class);
@@ -394,7 +393,7 @@ public class Buf {
     }
 
     private int getVirtualCol(int width) {
-        if (lines.isEmpty()) {
+        if (lines.isEmpty() || getRow() > lines.size()) {
             return 0;
         }
         int fivePToRight = (int) (width * 0.05);
@@ -403,7 +402,7 @@ public class Buf {
         return stCol;
     }
 
-    public List<DispObj> getLinesToDisplay(VimMode vimMode) {
+    public List<DispObj> getLinesToDisplay() {
         List<DispObj> dispObjs = new ArrayList<>();
         int leftBorderWidth = getBorderWidths(BufferMode.LEFT_BORDER);
         int topBorderWidth = getBorderWidths(BufferMode.TOP_BORDER);
