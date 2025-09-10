@@ -442,7 +442,6 @@ public class View {
         eventListeners.clear();
         buffers.get(sideBufNo).reset();
         buffers.get(mainBufNo).reset();
-
     }
 
     public void calcScrollView(int screenWidth, int screenHeight) {

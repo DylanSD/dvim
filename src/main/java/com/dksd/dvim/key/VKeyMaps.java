@@ -42,6 +42,7 @@ public class VKeyMaps {
     private final Set<String> keysMappings = new HashSet<>();
     private final Harpoons harpoons = new Harpoons();
     private Function<String, String> prevFunctionRun = null;
+    private Telescope telescope;
 
     public VKeyMaps(VimEng ve) {
         this.vimEng = ve;
@@ -240,6 +241,10 @@ public class VKeyMaps {
                 List.of("<esc>"), "escape from any mode to command mode", s -> {
                     vimEng.setVimMode(VimMode.COMMAND);
                     vimEng.clearKeys();
+                    vimEng.cancelTelescope();
+                    if (telescope != null) {
+                        telescope.cancelFuture();
+                    }
                     System.out.println("Pressed Esc to go into command mode");
                     return null;//no mapping
                 });
@@ -497,7 +502,7 @@ public class VKeyMaps {
 
     private void telescope(List<String> options, Consumer<Line> consumer) {
         //Support delete, tab completions as well from AI yes?
-        Telescope.builder(vimEng, this)
+        telescope = Telescope.builder(vimEng, this)
                 .options(options)
                 .consumer(consumer)
                 .timeout(30, TimeUnit.SECONDS)                 // shorter timeout

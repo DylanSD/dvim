@@ -281,6 +281,10 @@ public class VimEng {
     public void popPrevChange() {
         getView().getActiveBuf().undo();
     }
+
+    public void cancelTelescope() {
+        getView(TELESCOPE_VIEW).reset();
+    }
 }
 
 /*

@@ -231,6 +231,10 @@ public final class Telescope {
         return new Builder(vimEng, vKeyMaps);
     }
 
+    public void cancelFuture() {
+        resultFuture.cancel(true);
+    }
+
     public static final class Builder {
         // required
         private final VimEng vimEng;
