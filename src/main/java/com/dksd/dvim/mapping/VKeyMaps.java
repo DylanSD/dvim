@@ -99,6 +99,9 @@ public class VKeyMaps {
 
         tm.addStrokeMapping(new KeyStroke(' ', false, false, false), "<leader>");
         tm.addStrokeMapping(new KeyStroke(KeyType.Enter, false, false, false), "<enter>");
+        tm.addStrokeMapping(new KeyStroke(KeyType.Tab, false, false, false), "<tab>");
+        tm.addStrokeMapping(new KeyStroke('\t', false, false, false), "<tab>");
+        tm.addStrokeMapping(new KeyStroke(KeyType.ReverseTab, false, false, false), "<r-tab>");
         tm.addStrokeMapping(new KeyStroke(KeyType.Escape, false, false, false), "<esc>");
         tm.addStrokeMapping(new KeyStroke(KeyType.Backspace, false, false, false), "<bs>");
         tm.addStrokeMapping(new KeyStroke(KeyType.Delete, false, false, false), "<del>");
@@ -164,6 +167,13 @@ public class VKeyMaps {
         }, true);
         tm.putKeyMap(VimMode.INSERT, "<enter>", "desc", s -> {
             vimEng.splitToNextLine();
+            return null;//no mapping
+        }, true);
+        tm.putKeyMap(List.of(VimMode.INSERT, VimMode.COMMAND), "<tab>", "tab completion or insert spaces", s -> {
+            //vimEng.splitToNextLine();
+            //open a window with list of suggestions that are in a Trie
+            Line cLine = vimEng.getCurrentLine();
+            vimEng.getView().setTabComplete(cLine);
             return null;//no mapping
         }, true);
         tm.putKeyMap(List.of(VimMode.COMMAND, VimMode.INSERT), "<home>", "desc", s -> {

@@ -443,4 +443,12 @@ public class Buf {
         col.set(0);
         eventQueue.clear();
     }
+
+    public void calcPopoverScrollView(int row, int screenWidth, int screenHeight) {
+        int newWidth = scrollView.getPercentOfScreenWidth() * screenWidth / 100;
+        scrollView.setRowStart(row + 5);
+        scrollView.setRowEnd(screenHeight - 1);
+        scrollView.setColStart((screenWidth / 2) - (newWidth / 2));
+        scrollView.setColEnd((screenWidth / 2) + (newWidth / 2));
+    }
 }

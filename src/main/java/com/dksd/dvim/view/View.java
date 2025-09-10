@@ -39,6 +39,7 @@ public class View {
     public static final String HEADER_BUFFER = "header";
     public static final String MAIN_BUFFER = "main";
     public static final String SIDE_BUFFER = "side"; //used for text complete..and editing lists
+    public static final String TAB_BUFFER = "tab";
     public static final TextColor.Indexed HIGHLIGHT_BG_COLOR = new TextColor.Indexed(237);
     public static final TextColor.Indexed HIGHLIGHT_MATCHED_POS = new TextColor.Indexed(70);
     public static final TextColor.Indexed SELECTED_ITEM_COLOR = new TextColor.Indexed(1);
@@ -52,8 +53,11 @@ public class View {
     private int headerBufNo = -1;
     private int mainBufNo = -1;
     private int sideBufNo = -1;
+    private int tabBufNo = -1;
     private final ExecutorService executor;
     private JavaSyntaxHighlighter syntaxHighlighter = new JavaSyntaxHighlighter();
+    private final LinkedBlockingQueue<Future<?>> futures = new LinkedBlockingQueue<>();
+    private Line tabComplete;
 
     public View(String viewName, TerminalScreen screen, ExecutorService executor) {
         this.name = viewName;
@@ -129,7 +133,20 @@ public class View {
                 BufferMode.LEFT_BORDER,
                 BufferMode.TOP_BORDER);
         sideBufNo = sideBuf.getBufNo();
-        //sideBuf.addRow("Side buf");
+
+        Buf tabBuf = createBuf(
+                TAB_BUFFER,
+                TAB_BUFFER + ".txt",
+                50,
+                70,
+                false,
+                BufferMode.POP_OVER,
+                BufferMode.NO_LINE_NUMBERS,
+                BufferMode.LEFT_BORDER,
+                BufferMode.RIGHT_BORDER,
+                BufferMode.BOT_BORDER,
+                BufferMode.TOP_BORDER);
+        tabBufNo = tabBuf.getBufNo();
 
         headerBuf.setTopBufs(List.of(statusBuf));
         mainBuf.setTopBufs(List.of(headerBuf));
@@ -194,7 +211,6 @@ public class View {
         return buffers.get(bufNo);
     }
 
-    LinkedBlockingQueue<Future<?>> futures = new LinkedBlockingQueue<>();
     public void draw(TerminalScreen screen) {
         long st = System.currentTimeMillis();
         futures.clear();
@@ -211,6 +227,13 @@ public class View {
 
             for (Buf buf : List.of(stBuf, hBuf, mbuf, sideBuf)) {
                 drawBuffer(screen, textGraphics, buf, futures);
+            }
+
+            if (tabComplete != null) {
+                Buf tabBuf = buffers.get(tabBufNo);
+                tabBuf.calcPopoverScrollView(getActiveBuf().getRow(),
+                        screen.getTerminalSize().getColumns(), screen.getTerminalSize().getRows());
+                drawBuffer(screen, textGraphics, tabBuf, futures);
             }
 
             for (Future<?> future : futures) {
@@ -470,5 +493,9 @@ public class View {
 
     public void expandScrollView(int topD, int botD, int leftD, int rightD) {
         getActiveBuf().getScrollView().expandScrollView(getActiveBuf(), topD, botD, leftD, rightD);
+    }
+
+    public void setTabComplete(Line cLine) {
+        this.tabComplete = cLine;
     }
 }
