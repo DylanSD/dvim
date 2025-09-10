@@ -240,7 +240,7 @@ public final class Telescope {
         private ExecutorService executorService;
 
         // optional – sensible defaults
-        private long timeout = 1000;                 // 100 units by default
+        private long timeout = 10000;                 // 100 units by default
         private TimeUnit timeoutUnit = TimeUnit.SECONDS;
         private FuzzyMatcherV1 matcher = null;      // lazy‑created if null
 

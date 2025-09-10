@@ -115,17 +115,15 @@ public class Buf {
         setCol(col + colDelta);
     }
 
-    public void deleteLine(int startRow, int endRow) {
-        int row = getRow();
-        for (int i = startRow; i < endRow; i++) {
-            if (row > lines.size()) {
-                setRow(lines.size() - 1);
-            }
-            if (!lines.isEmpty()) {
-                lines.remove(row);
-                eventQueue.add(new VimEvent(bufNo, EventType.BUF_CHANGE));
-            }
+    public void deleteLine(int row) {
+        if (!lines.isEmpty()) {
+            lines.remove(row);
+            eventQueue.add(new VimEvent(bufNo, EventType.BUF_CHANGE));
         }
+        if (row >= lines.size()) {
+            setRow(lines.size() - 1);
+        }
+        setCol(0);
     }
 
     public void deleteInLine(int numChars) {
@@ -364,7 +362,7 @@ public class Buf {
     }
 
     private int getVirtualCol(int row, int col, int width) {
-        if (lines.isEmpty() || row > lines.size()) {
+        if (lines.isEmpty() || row >= lines.size()) {
             return 0;
         }
         int fivePToRight = (int) (width * 0.05);

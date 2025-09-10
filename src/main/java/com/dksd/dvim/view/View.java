@@ -125,6 +125,7 @@ public class View {
                 35,
                 true,
                 BufferMode.RELATIVE_HEIGHT,
+                BufferMode.NO_LINE_NUMBERS,
                 BufferMode.LEFT_BORDER,
                 BufferMode.TOP_BORDER);
         sideBufNo = sideBuf.getBufNo();
@@ -244,7 +245,7 @@ public class View {
             Line gutter = genGutter(buf, dispObj.getLineContent());
                 drawString(textGraphics,
                         gutter,
-                        0,
+                        dispObj.getScreenCol() - 6,
                         dispObj.getScreenRow(),
                         futures);
                 drawString(textGraphics,
@@ -288,9 +289,9 @@ public class View {
     }
 
     private void drawString(TextGraphics tg, Line line, int colOffset, int rowOffset, LinkedBlockingQueue<Future<?>> futures) {
-        syntaxHighlighter.drawHighlightedCode(tg, line.getContent(), rowOffset, colOffset, futures);
+        //syntaxHighlighter.drawHighlightedCode(tg, line.getContent(), rowOffset, colOffset, futures);
 //xxx
-        //tg.putString(colOffset, rowOffset, line.getContent());
+        tg.putString(colOffset, rowOffset, line.getContent());
     }
 
     private void generateColors(TextGraphics textGraphics, Buf buf) {

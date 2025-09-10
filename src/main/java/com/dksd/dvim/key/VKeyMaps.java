@@ -211,7 +211,7 @@ public class VKeyMaps {
         });
         putKeyMap(VimMode.COMMAND, "dd", "deletes current line and stores in clipboard", s -> {
             harpoons.addAll(Harpoons.CLIPBOARD, vimEng.copyLines(vimEng.getRow(), vimEng.getRow() + 1));
-            vimEng.deleteLines(vimEng.getRow(), vimEng.getRow() + 1);
+            vimEng.deleteLines(vimEng.getRow());
             return null;//no mapping
         });
         putKeyMap(VimMode.COMMAND, "p", "paste clipboard", s -> {
@@ -263,7 +263,11 @@ public class VKeyMaps {
             return null;
         });
         putKeyMap(VimMode.COMMAND, "<leader>fd", "find and set directories", s -> {
-            telescope(streamPath(getCurrentPath(), Files::isDirectory).toList(), line -> {
+            Predicate<Path> filter = path -> Files.isDirectory(path) &&
+                    (path.toString().contains("projects") ||
+                    path.toString().contains("wtcode") ||
+                    path.toString().contains("dev"));
+            telescope(streamPath(getCurrentPath().getParent(), filter).toList(), line -> {
                 setCurrentDir(line.getContent());
             });
             return null;
@@ -532,7 +536,9 @@ public class VKeyMaps {
                     .filter(filter)
                     .map((path) -> path.toAbsolutePath().toString())
                     .filter(file -> !file.contains("/build/"))
-                    .filter(file -> !file.contains("/target/"));
+                    .filter(file -> !file.contains("/target/"))
+                    .filter(file -> file.contains("/src/"))
+                    .limit(100);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

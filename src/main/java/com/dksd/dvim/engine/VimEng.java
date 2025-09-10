@@ -221,8 +221,8 @@ public class VimEng {
         moveCursor(getView().getActiveBufNo(), rowDelta, colDelta);
     }
 
-    public void deleteLines(int rowStart, int rowEnd) {
-        getView().getBuffer(getView().getActiveBufNo()).deleteLine(rowStart, rowEnd);
+    public void deleteLines(int row) {
+        getView().getBuffer(getView().getActiveBufNo()).deleteLine(row);
     }
 
     public void deleteInLine(int numChars) {
