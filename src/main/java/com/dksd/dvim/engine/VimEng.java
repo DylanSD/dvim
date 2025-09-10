@@ -102,11 +102,15 @@ public class VimEng {
     }
 
     public void executeFunction(Buf activeBuf, String functionToExec) {
-        String[] params = getParams(functionToExec);
-        if ("write".equals(functionToExec)) {
-            activeBuf.writeFile();
-        } else if ("read".equals(functionToExec)) {
-            activeBuf.readFile(params[0]);
+        try {
+            String[] params = getParams(functionToExec);
+            if (functionToExec.startsWith("w")) {
+                activeBuf.writeFile(params);
+            } else if ("r".equals(functionToExec)) {
+                activeBuf.readFile(params[0]);
+            }
+        } catch (Exception ep) {
+            ep.printStackTrace();
         }
     }
 
@@ -118,13 +122,12 @@ public class VimEng {
         // Split on one-or-more spaces to avoid empty tokens
         String[] tokens = functionToExec.trim().split("\\s+");
 
-        if (tokens.length <= 2) {
+        if (tokens.length <= 1) {
             return new String[0]; // no parameters
         }
 
-        return Arrays.copyOfRange(tokens, 2, tokens.length);
+        return Arrays.copyOfRange(tokens, 1, tokens.length);
     }
-
 
     public void clearKeys() {
         keyStrokes.clear();
@@ -160,11 +163,6 @@ public class VimEng {
     public void setActiveBuffer(int bufNo) {
         getView().setActiveBufNo(bufNo);
     }
-
-    public void setActiveBufByName(String name) {
-        getView().setActiveBuf(name);
-    }
-
     private Buf getBuffer(int bufNo) {
         return getView().getBuffer(bufNo);
     }

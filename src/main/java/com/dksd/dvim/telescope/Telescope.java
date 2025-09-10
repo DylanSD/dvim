@@ -20,7 +20,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 /**
@@ -126,6 +125,7 @@ public final class Telescope {
     private void initViewsAndBuffers() {
         currView = vimEng.getView(VimEng.START_VIEW);
         telescopeView = vimEng.getView(VimEng.TELESCOPE_VIEW);
+        telescopeView.reset();
 
         vimEng.setView(telescopeView);
         vimEng.setVimMode(VimMode.INSERT);
@@ -140,7 +140,7 @@ public final class Telescope {
         resultsBuf.setLines(Line.convert(options));
 
         // 3️⃣  Initialise UI state (arrow on first line, focus input)
-        telescopeView.setActiveBuf(View.SIDE_BUFFER);
+        telescopeView.setActiveBuf(inputBufNo);
         moveArrowInResults(resultsBuf, 0);
     }
 
@@ -187,8 +187,12 @@ public final class Telescope {
         vKeyMaps.reMap(List.of(VimMode.INSERT, VimMode.COMMAND), "<enter>", "accept selection",
                 is -> {
                     Line selected = resultsBuf.getCurrentLine();
-                    resultFuture.complete(selected);
-                    System.out.println("Selected: " + selected);
+                    Line inputSel = inputBuf.getCurrentLine();
+                    if (!selected.isEmpty()) {
+                        resultFuture.complete(selected);
+                    } else {
+                        resultFuture.complete(inputSel);
+                    }
                     return null;
                 }, true);
 //        vKeyMaps.reMap(List.of(VimMode.COMMAND), "d", "escape telescope",
@@ -280,11 +284,13 @@ public final class Telescope {
 
     private void moveArrowInResults(Buf resultsBuf,
                                     int rowDelta) {
-        resultsBuf.getCurrentLine().setIndicatorStr(null);
-        System.out.println(resultsBuf.getCurrentLine());
-        resultsBuf.addToRow(rowDelta);
-        resultsBuf.getCurrentLine().setIndicatorStr("->");
-        System.out.println(resultsBuf.getCurrentLine());
+        if (resultsBuf.getCurrentLine() != null) {
+            resultsBuf.getCurrentLine().setIndicatorStr(null);
+            System.out.println(resultsBuf.getCurrentLine());
+            resultsBuf.addToRow(rowDelta);
+            resultsBuf.getCurrentLine().setIndicatorStr(">");
+            System.out.println(resultsBuf.getCurrentLine());
+        }
     }
 
     private List<Result> handleBufChangeEvent(VimEvent vimEvent,
@@ -310,6 +316,7 @@ public final class Telescope {
     private String revertTelescopeView(VimEng vimEng, View currView, View telescopeView) {
         vimEng.setView(currView);
         telescopeView.removeListeners();
+        resultFuture.cancel(true);
         telescopeView.reset();
         System.out.println("reverted telescope view");
         return null;

@@ -35,7 +35,6 @@ public class Buf {
     private final InternalBuf lines;
     private final AtomicInteger row = new AtomicInteger(0), col = new AtomicInteger(0);
     private final Set<BufferMode> bufferModes = new HashSet<>();
-    //private final List<LineIndicator> lineIndicators = new ArrayList<>();
     private final Queue<VimEvent> eventQueue;
 
     public Buf(String name, String filename, int bufNo, ScrollView scrollView, Queue<VimEvent> eventQueue,
@@ -223,26 +222,29 @@ public class Buf {
 
     public void writeFile() {
         try {
-            writeFile(filename);
-        } catch (IOException e) {
+            writeFile(filename.split(""));
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    public void writeFile(String filenameOut) throws IOException {
-        try (
-                PrintWriter printWriter = new PrintWriter(
-                        new BufferedWriter(
-                                new OutputStreamWriter(
-                                        Files.newOutputStream(Paths.get(filenameOut)),
-                                        StandardCharsets.UTF_8
-                                )
-                        )
-                )
-        ) {
-            for (Line line : lines.getLines()) {
-                printWriter.println(line.getContent());
+    public void writeFile(String[] filenameOuts) throws IOException {
+        for (String filenameOut : filenameOuts) {
+            try (
+                    PrintWriter printWriter = new PrintWriter(
+                            new BufferedWriter(
+                                    new OutputStreamWriter(
+                                            Files.newOutputStream(Paths.get(filenameOut)),
+                                            StandardCharsets.UTF_8
+                                    )
+                            )
+                    )
+            ) {
+                for (Line line : lines.getLines()) {
+                    printWriter.println(line.getContent());
+                }
             }
+            System.out.println("Wrote " + filenameOut);
         }
     }
 
@@ -435,5 +437,12 @@ public class Buf {
 
     public Line getCurrentLineIndicator() {
         return getLine(getRow());
+    }
+
+    public void reset() {
+        lines.reset();
+        row.set(0);
+        col.set(0);
+        eventQueue.clear();
     }
 }

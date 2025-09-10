@@ -15,6 +15,7 @@ public class InternalBuf {
 
     public InternalBuf(boolean keepUndo) {
         this.keepUndo = keepUndo;
+        getCurrBuf();
     }
 
     public boolean isEmpty() {
@@ -90,5 +91,10 @@ public class InternalBuf {
             }
         }
         return getCurrBuf();
+    }
+
+    public void reset() {
+        undoStack.clear();
+        getCurrBuf();
     }
 }

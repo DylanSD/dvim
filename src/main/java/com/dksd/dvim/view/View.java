@@ -417,12 +417,8 @@ public class View {
         return Objects.hash(logger, name, buffers, events, eventListeners, activeBufNo, statusBufNo, headerBufNo, executor);
     }
 
-    public void setActiveBuf(String name) {
-        for (Map.Entry<Integer, Buf> entry : buffers.entrySet()) {
-            if (entry.getValue().getName().equals(name)) {
-                setActiveBufNo(entry.getKey());
-            }
-        }
+    public void setActiveBuf(int bufNo) {
+        setActiveBufNo(bufNo);
     }
 
     public BlockingQueue<VimEvent> getEvents() {
@@ -443,8 +439,9 @@ public class View {
 
     public void reset() {
         eventListeners.clear();
-        buffers.get(sideBufNo).setLines(Collections.emptyList());
-        buffers.get(mainBufNo).setLines(Collections.emptyList());
+        buffers.get(sideBufNo).reset();
+        buffers.get(mainBufNo).reset();
+
     }
 
     public void calcScrollView(int screenWidth, int screenHeight) {

@@ -47,7 +47,7 @@ public class JavaSyntaxHighlighter {
     // Palette-based colors
     private final TextColor keywordColor = rgbFromPalette(Palette.MOCHA.getBlue().getRGBComponents());
     private final TextColor stringColor  = rgbFromPalette(Palette.MOCHA.getGreen().getRGBComponents());
-    private final TextColor commentColor = rgbFromPalette(Palette.MOCHA.getYellow().getRGBComponents());
+    private final TextColor commentColor = rgbFromPalette(Palette.MOCHA.getRed().getRGBComponents());
     private final TextColor numberColor  = rgbFromPalette(Palette.MOCHA.getYellow().getRGBComponents());
     private final TextColor baseColor    = rgbFromPalette(Palette.MOCHA.getText().getRGBComponents());
 
