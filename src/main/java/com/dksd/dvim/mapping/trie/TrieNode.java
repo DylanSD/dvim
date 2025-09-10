@@ -1,4 +1,4 @@
-package com.dksd.dvim.key.trie;
+package com.dksd.dvim.mapping.trie;
 
 import java.util.ArrayList;
 import java.util.Collections;

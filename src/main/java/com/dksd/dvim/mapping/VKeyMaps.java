@@ -1,33 +1,26 @@
-package com.dksd.dvim.key;
+package com.dksd.dvim.mapping;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import com.dksd.dvim.engine.VimEng;
 import com.dksd.dvim.history.Harpoons;
+import com.dksd.dvim.key.ScriptBuilder;
+import com.dksd.dvim.mapping.trie.TrieMapManager;
 import com.dksd.dvim.telescope.Telescope;
 import com.dksd.dvim.view.VimMode;
-import com.dksd.dvim.key.trie.Trie;
-import com.dksd.dvim.key.trie.TrieNode;
 import com.dksd.dvim.view.Line;
 import com.googlecode.lanterna.input.KeyStroke;
 import com.googlecode.lanterna.input.KeyType;
-import org.buildobjects.process.ProcBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,16 +29,16 @@ public class VKeyMaps {
 
     private final VimEng vimEng;
     private Logger logger = LoggerFactory.getLogger(VKeyMaps.class);
-    private final Map<VimMode, Trie> mappings = new ConcurrentHashMap<>();
-    private final Map<KeyStroke, String> keyStrokeToStringMapping = new HashMap<>();
     //Used for duplication and getting a list of keys
-    private final Set<String> keysMappings = new HashSet<>();
+    //private final Set<String> keysMappings = new HashSet<>();
+    private final TrieMapManager tm;
+    private final ScriptBuilder sb = new ScriptBuilder();
     private final Harpoons harpoons = new Harpoons();
-    private Function<String, String> prevFunctionRun = null;
     private Telescope telescope;
 
-    public VKeyMaps(VimEng ve) {
+    public VKeyMaps(VimEng ve, TrieMapManager tm) {
         this.vimEng = ve;
+        this.tm = tm;
         loadVimKeyConverter();
         harpoons.add(Harpoons.DIRS, System.getProperty("user.dir"));
     }
@@ -54,109 +47,109 @@ public class VKeyMaps {
     private void loadVimKeyConverter() {//VIM conversion only
         for (int i = 33; i < 127; i++) {
             final String chr = "" + (char) i;
-            keyStrokeToStringMapping.put(new KeyStroke((char) i, false, false, false), chr);
-            keyStrokeToStringMapping.put(new KeyStroke((char) i, true, false, false), "<c-" + chr + ">");
-            keyStrokeToStringMapping.put(new KeyStroke((char) i, false, true, false), "<a-" + chr + ">");
-            keyStrokeToStringMapping.put(new KeyStroke((char) i, false, false, true), "<s-" + chr + ">");
+            tm.addStrokeMapping(new KeyStroke((char) i, false, false, false), chr);
+            tm.addStrokeMapping(new KeyStroke((char) i, true, false, false), "<c-" + chr + ">");
+            tm.addStrokeMapping(new KeyStroke((char) i, false, true, false), "<a-" + chr + ">");
+            tm.addStrokeMapping(new KeyStroke((char) i, false, false, true), "<s-" + chr + ">");
         }
         for (int i = 97; i < 122; i++) {
             final String chr = "" + (char) i;
-            keyStrokeToStringMapping.put(
+            tm.addStrokeMapping(
                     new KeyStroke(Character.toUpperCase((char) i), false, false, true),
                     "<s-" + chr.toUpperCase() + ">");
-            keyStrokeToStringMapping.put(
+            tm.addStrokeMapping(
                     new KeyStroke(Character.toUpperCase((char) i), false, true, false),
                     "<a-" + chr + ">");
-            keyStrokeToStringMapping.put(
+            tm.addStrokeMapping(
                     new KeyStroke(Character.toUpperCase((char) i), false, true, true),
                     "<a-" + chr.toUpperCase() + ">");
-            putKeyMap(List.of(VimMode.INSERT, VimMode.SEARCH, VimMode.FUZZY_FIND), "<s-" + chr.toUpperCase() + ">", "Shift key mapping",
+            tm.putKeyMap(List.of(VimMode.INSERT, VimMode.SEARCH, VimMode.FUZZY_FIND), "<s-" + chr.toUpperCase() + ">", "Shift key mapping",
                     s -> {
                         vimEng.getActiveBuf().insertIntoLine(chr.toUpperCase());
                         return null;//no mapping
                     }, true);
-            keyStrokeToStringMapping.put(
+            tm.addStrokeMapping(
                     new KeyStroke(Character.toUpperCase((char) i), true, false, true),
                     "<sc-" + chr.toUpperCase() + ">");
-            keyStrokeToStringMapping.put(
+            tm.addStrokeMapping(
                     new KeyStroke(Character.toUpperCase((char) i), false, true, true),
                     "<sa-" + chr.toUpperCase() + ">");
         }
-        shiftMap(keyStrokeToStringMapping, '!');
-        shiftMap(keyStrokeToStringMapping, '@');
-        shiftMap(keyStrokeToStringMapping, '#');
-        shiftMap(keyStrokeToStringMapping, '$');
-        shiftMap(keyStrokeToStringMapping, '%');
-        shiftMap(keyStrokeToStringMapping, '^');
-        shiftMap(keyStrokeToStringMapping, '&');
-        shiftMap(keyStrokeToStringMapping, '*');
-        shiftMap(keyStrokeToStringMapping, '(');
-        shiftMap(keyStrokeToStringMapping, ')');
-        shiftMap(keyStrokeToStringMapping, '_');
-        shiftMap(keyStrokeToStringMapping, '+');
-        shiftMap(keyStrokeToStringMapping, '{');
-        shiftMap(keyStrokeToStringMapping, '}');
-        shiftMap(keyStrokeToStringMapping, '|');
-        shiftMap(keyStrokeToStringMapping, '"');
-        shiftMap(keyStrokeToStringMapping, ':');
-        shiftMap(keyStrokeToStringMapping, '<');
-        shiftMap(keyStrokeToStringMapping, '>');
-        shiftMap(keyStrokeToStringMapping, '?');
-        shiftMap(keyStrokeToStringMapping, '~');
+        shiftMap( '!');
+        shiftMap( '@');
+        shiftMap( '#');
+        shiftMap( '$');
+        shiftMap( '%');
+        shiftMap( '^');
+        shiftMap( '&');
+        shiftMap( '*');
+        shiftMap( '(');
+        shiftMap( ')');
+        shiftMap( '_');
+        shiftMap( '+');
+        shiftMap( '{');
+        shiftMap( '}');
+        shiftMap( '|');
+        shiftMap( '"');
+        shiftMap( ':');
+        shiftMap( '<');
+        shiftMap( '>');
+        shiftMap( '?');
+        shiftMap( '~');
 
-        keyStrokeToStringMapping.put(new KeyStroke(' ', false, false, false), "<leader>");
-        keyStrokeToStringMapping.put(new KeyStroke(KeyType.Enter, false, false, false), "<enter>");
-        keyStrokeToStringMapping.put(new KeyStroke(KeyType.Escape, false, false, false), "<esc>");
-        keyStrokeToStringMapping.put(new KeyStroke(KeyType.Backspace, false, false, false), "<bs>");
-        keyStrokeToStringMapping.put(new KeyStroke(KeyType.Delete, false, false, false), "<del>");
-        keyStrokeToStringMapping.put(new KeyStroke(KeyType.Home, false, false, false), "<home>");
-        keyStrokeToStringMapping.put(new KeyStroke(KeyType.End, false, false, false), "<end>");
-        keyStrokeToStringMapping.put(new KeyStroke(KeyType.ArrowLeft, false, false, false),
+        tm.addStrokeMapping(new KeyStroke(' ', false, false, false), "<leader>");
+        tm.addStrokeMapping(new KeyStroke(KeyType.Enter, false, false, false), "<enter>");
+        tm.addStrokeMapping(new KeyStroke(KeyType.Escape, false, false, false), "<esc>");
+        tm.addStrokeMapping(new KeyStroke(KeyType.Backspace, false, false, false), "<bs>");
+        tm.addStrokeMapping(new KeyStroke(KeyType.Delete, false, false, false), "<del>");
+        tm.addStrokeMapping(new KeyStroke(KeyType.Home, false, false, false), "<home>");
+        tm.addStrokeMapping(new KeyStroke(KeyType.End, false, false, false), "<end>");
+        tm.addStrokeMapping(new KeyStroke(KeyType.ArrowLeft, false, false, false),
                 "<left>");
-        keyStrokeToStringMapping.put(new KeyStroke(KeyType.ArrowLeft, false, true, false),
+        tm.addStrokeMapping(new KeyStroke(KeyType.ArrowLeft, false, true, false),
                 "<a-left>");
-        keyStrokeToStringMapping.put(new KeyStroke(KeyType.ArrowRight, false, false, false),
+        tm.addStrokeMapping(new KeyStroke(KeyType.ArrowRight, false, false, false),
                 "<right>");
-        keyStrokeToStringMapping.put(new KeyStroke(KeyType.ArrowRight, false, true, false),
+        tm.addStrokeMapping(new KeyStroke(KeyType.ArrowRight, false, true, false),
                 "<a-right>");
-        keyStrokeToStringMapping.put(new KeyStroke(KeyType.ArrowUp, false, false, false), "<up>");
-        keyStrokeToStringMapping.put(new KeyStroke(KeyType.ArrowUp, false, true, false), "<a-up>");
-        keyStrokeToStringMapping.put(new KeyStroke(KeyType.ArrowDown, false, false, false),
+        tm.addStrokeMapping(new KeyStroke(KeyType.ArrowUp, false, false, false), "<up>");
+        tm.addStrokeMapping(new KeyStroke(KeyType.ArrowUp, false, true, false), "<a-up>");
+        tm.addStrokeMapping(new KeyStroke(KeyType.ArrowDown, false, false, false),
                 "<down>");
-        keyStrokeToStringMapping.put(new KeyStroke(KeyType.ArrowDown, false, true, false),
+        tm.addStrokeMapping(new KeyStroke(KeyType.ArrowDown, false, true, false),
                 "<a-down>");
 
         createSimpleCharMappings();
 
-        putKeyMap(VimMode.COMMAND, "h", "Move left", s -> {
+        tm.putKeyMap(VimMode.COMMAND, "h", "Move left", s -> {
             vimEng.moveCursor(0, -1); //left
             return null;//no mapping
         }, true);
-        putKeyMap(VimMode.COMMAND, "j", "Move down", s -> {
+        tm.putKeyMap(VimMode.COMMAND, "j", "Move down", s -> {
             vimEng.moveCursor(+1, 0); //down
             return null;//no mapping
         }, true);
-        putKeyMap(VimMode.COMMAND, "k", "move up", s -> {
+        tm.putKeyMap(VimMode.COMMAND, "k", "move up", s -> {
             vimEng.moveCursor(-1, 0); //up
             return null;//no mapping
         }, true);
-        putKeyMap(VimMode.COMMAND, "l", "desc", s -> {
+        tm.putKeyMap(VimMode.COMMAND, "l", "desc", s -> {
             vimEng.moveCursor(0, +1); //right
             return null;//no mapping
         }, true);
-        putKeyMap(List.of(VimMode.COMMAND, VimMode.INSERT, VimMode.SEARCH), "<left>", "desc", s -> {
+        tm.putKeyMap(List.of(VimMode.COMMAND, VimMode.INSERT, VimMode.SEARCH), "<left>", "desc", s -> {
             vimEng.moveCursor(0, -1); //left
             return null;//no mapping
         }, true);
-        putKeyMap(List.of(VimMode.COMMAND, VimMode.INSERT), "<down>", "desc", s -> {
+        tm.putKeyMap(List.of(VimMode.COMMAND, VimMode.INSERT), "<down>", "desc", s -> {
             vimEng.moveCursor(+1, 0); //down
             return null;//no mapping
         }, true);
-        putKeyMap(List.of(VimMode.COMMAND, VimMode.INSERT), "<up>", "desc", s -> {
+        tm.putKeyMap(List.of(VimMode.COMMAND, VimMode.INSERT), "<up>", "desc", s -> {
             vimEng.moveCursor(-1, 0); //up
             return null;//no mapping
         }, true);
-        putKeyMap(VimMode.COMMAND, "/", "desc", s -> {
+        tm.putKeyMap(VimMode.COMMAND, "/", "desc", s -> {
             vimEng.setVimMode(VimMode.INSERT);
             telescope(Line.convertLines(vimEng.getView().getActiveBuf().getLinesDangerous()),
                     lineResult -> {
@@ -165,37 +158,37 @@ public class VKeyMaps {
                     });
             return null;//no mapping
         });
-        putKeyMap(List.of(VimMode.COMMAND, VimMode.INSERT, VimMode.SEARCH), "<right>", "desc", s -> {
+        tm.putKeyMap(List.of(VimMode.COMMAND, VimMode.INSERT, VimMode.SEARCH), "<right>", "desc", s -> {
             vimEng.moveCursor(0, +1); //right
             return null;//no mapping
         }, true);
-        putKeyMap(VimMode.INSERT, "<enter>", "desc", s -> {
+        tm.putKeyMap(VimMode.INSERT, "<enter>", "desc", s -> {
             vimEng.splitToNextLine();
             return null;//no mapping
         }, true);
-        putKeyMap(List.of(VimMode.COMMAND, VimMode.INSERT), "<home>", "desc", s -> {
+        tm.putKeyMap(List.of(VimMode.COMMAND, VimMode.INSERT), "<home>", "desc", s -> {
             Line line = vimEng.getCurrentLine();
             int stripped = line.getContent().stripLeading().length();
             vimEng.moveCursor(line.length() - stripped, 0);
             return null;//no mapping
         }, true);
-        putKeyMap(List.of(VimMode.COMMAND, VimMode.INSERT), "<end>", "desc", s -> {
+        tm.putKeyMap(List.of(VimMode.COMMAND, VimMode.INSERT), "<end>", "desc", s -> {
             Line line = vimEng.getCurrentLine();
             vimEng.moveCursor(0, line.length());
             return null;//no mapping
         }, true);
-        putKeyMap(VimMode.COMMAND, "x", "desc", s -> {
+        tm.putKeyMap(VimMode.COMMAND, "x", "desc", s -> {
             vimEng.deleteInLine(1);
             return null;//no mapping
         }, true);
-        putKeyMap(VimMode.COMMAND, List.of("w", "<a-right>"), "move forward a word", s -> {
+        tm.putKeyMap(VimMode.COMMAND, List.of("w", "<a-right>"), "move forward a word", s -> {
             Line line = vimEng.getCurrentLine();
             int col = vimEng.getCol();
             int offset = line.getContent().indexOf(" ", col);
             vimEng.moveCursor(0, offset - col + 1);
             return null;//no mapping
         });
-        putKeyMap(VimMode.COMMAND, List.of("b", "<a-left>"), "move backward a word", s -> {
+        tm.putKeyMap(VimMode.COMMAND, List.of("b", "<a-left>"), "move backward a word", s -> {
             Line line = vimEng.getCurrentLine();
             int col = vimEng.getCol();
             for (int i = col - 1; i >= 0; i--) {
@@ -206,38 +199,38 @@ public class VKeyMaps {
             }
             return null;//no mapping
         });
-        putKeyMap(VimMode.COMMAND, "yy", "copy line to mem", s -> {
+        tm.putKeyMap(VimMode.COMMAND, "yy", "copy line to mem", s -> {
             harpoons.addAll(Harpoons.CLIPBOARD, vimEng.copyLines(vimEng.getRow(), vimEng.getRow() + 1));
             return null;//no mapping
         });
-        putKeyMap(VimMode.COMMAND, "dd", "deletes current line and stores in clipboard", s -> {
+        tm.putKeyMap(VimMode.COMMAND, "dd", "deletes current line and stores in clipboard", s -> {
             harpoons.addAll(Harpoons.CLIPBOARD, vimEng.copyLines(vimEng.getRow(), vimEng.getRow() + 1));
             vimEng.deleteLines(vimEng.getRow());
             return null;//no mapping
         });
-        putKeyMap(VimMode.COMMAND, "p", "paste clipboard", s -> {
+        tm.putKeyMap(VimMode.COMMAND, "p", "paste clipboard", s -> {
             Line line = vimEng.getCurrentLine();
             int col = vimEng.getCol();
             String l = line.getContent().substring(0, col) + harpoons.get(Harpoons.CLIPBOARD) + line.getContent().substring(col);
             vimEng.setLine(vimEng.getRow(), l);
             return null;//no mapping
         });
-        putKeyMap(VimMode.COMMAND, "u", "undo the last action", s -> {
+        tm.putKeyMap(VimMode.COMMAND, "u", "undo the last action", s -> {
             //vimEng.setVimMode(VimMode.INSERT);
             vimEng.popPrevChange();
             return null;//no mapping
         });
-        putKeyMap(VimMode.COMMAND, ".", "redo the last action", s -> {
+        tm.putKeyMap(VimMode.COMMAND, ".", "redo the last action", s -> {
             //vimEng.setVimMode(VimMode.INSERT);
-            prevFunctionRun.apply(vimEng.getCurrentLine().getContent());
+            tm.getPrevFunctionRun().apply(vimEng.getCurrentLine().getContent());
             return null;//no mapping
         });
-        putKeyMap(VimMode.COMMAND, "i", "desc", s -> {
+        tm.putKeyMap(VimMode.COMMAND, "i", "desc", s -> {
             vimEng.setVimMode(VimMode.INSERT);
             System.out.println("Pressed i to go into insert mode");
             return null;//no mapping
         });
-        putKeyMap(List.of(VimMode.COMMAND, VimMode.INSERT, VimMode.SEARCH, VimMode.FUZZY_FIND),
+        tm.putKeyMap(List.of(VimMode.COMMAND, VimMode.INSERT, VimMode.SEARCH, VimMode.FUZZY_FIND),
                 List.of("<esc>"), "escape from any mode to command mode", s -> {
                     vimEng.setVimMode(VimMode.COMMAND);
                     vimEng.clearKeys();
@@ -248,26 +241,26 @@ public class VKeyMaps {
                     System.out.println("Pressed Esc to go into command mode");
                     return null;//no mapping
                 });
-        putKeyMap(List.of(VimMode.INSERT, VimMode.SEARCH, VimMode.FUZZY_FIND), "<C-[>", "desc", s -> {
+        tm.putKeyMap(List.of(VimMode.INSERT, VimMode.SEARCH, VimMode.FUZZY_FIND), "<C-[>", "desc", s -> {
             vimEng.setVimMode(VimMode.COMMAND);
             System.out.println("Pressed <C-[> to go into command mode");
             return null;//no mapping
         });
-        putKeyMap(List.of(VimMode.INSERT, VimMode.SEARCH, VimMode.FUZZY_FIND), "<bs>", "desc", s -> {
+        tm.putKeyMap(List.of(VimMode.INSERT, VimMode.SEARCH, VimMode.FUZZY_FIND), "<bs>", "desc", s -> {
             vimEng.moveCursor(0, -1);
             vimEng.deleteInLine(1);
             vimEng.removeLastKeyStroke();
             System.out.println("Backspace pressed");
             return null;//no mapping
         });
-        putKeyMap(VimMode.COMMAND, "<leader>ff", "find files", s -> {
+        tm.putKeyMap(VimMode.COMMAND, "<leader>ff", "find files", s -> {
             telescope(streamPath(getCurrentPath(), Files::isRegularFile).toList(),
                     lineResult -> {
                 vimEng.loadFile(vimEng.getActiveBuf(), lineResult.getContent());
             });
             return null;
         });
-        putKeyMap(VimMode.COMMAND, "<leader>fd", "find and set directories", s -> {
+        tm.putKeyMap(VimMode.COMMAND, "<leader>fd", "find and set directories", s -> {
             Predicate<Path> filter = path -> Files.isDirectory(path) &&
                     (path.toString().contains("projects") ||
                     path.toString().contains("wtcode") ||
@@ -277,39 +270,40 @@ public class VKeyMaps {
             });
             return null;
         });
-        putKeyMap(VimMode.COMMAND, "<c-w><right>", "expand active buffer to the right", s -> {
+        tm.putKeyMap(VimMode.COMMAND, "<c-w><right>", "expand active buffer to the right", s -> {
             vimEng.getView().expandScrollView(0,0,0,1);
             return null;
         });
-        putKeyMap(VimMode.COMMAND, "<c-w><left>", "expand active buffer to the right", s -> {
+        tm.putKeyMap(VimMode.COMMAND, "<c-w><left>", "expand active buffer to the right", s -> {
             vimEng.getView().expandScrollView(0,0,-1,0);
             return null;
         });
-        putKeyMap(VimMode.COMMAND, "<c-w><up>", "expand active buffer to the right", s -> {
+        tm.putKeyMap(VimMode.COMMAND, "<c-w><up>", "expand active buffer to the right", s -> {
             vimEng.getView().expandScrollView(-1,0,0,0);
             return null;
         });
-        putKeyMap(VimMode.COMMAND, "<c-w><down>", "expand active buffer to the right", s -> {
+        tm.putKeyMap(VimMode.COMMAND, "<c-w><down>", "expand active buffer to the right", s -> {
             vimEng.getView().expandScrollView(0,1,0,0);
             return null;
         });
-        putKeyMap(VimMode.COMMAND, ":", "open command window", s -> {
+        tm.putKeyMap(VimMode.COMMAND, ":", "open command window", s -> {
             List<String> options = List.of("write", "read", "quit", "find", "grep");
             telescope(options, lineResult -> vimEng.executeFunction(vimEng.getActiveBuf(), lineResult.getContent()));
             return null;
         });
-        putKeyMap(VimMode.COMMAND, "<leader>fm", "find key mapping", s -> {
-            telescope(keysMappings.stream().toList(), lineResult -> harpoons.add(Harpoons.CLIPBOARD, lineResult.getContent()));
+        tm.putKeyMap(VimMode.COMMAND, "<leader>fm", "find key mapping", s -> {
+            //telescope(keysMappings.stream().toList(), lineResult -> harpoons.add(Harpoons.CLIPBOARD, lineResult.getContent()));
+            //TODO
             return null;
         });
         //Be kind cool to show various time options in telescope, then select mapping then another
         //telescope to show the recent files.
         //TODO
-        putKeyMap(VimMode.COMMAND, "<leader>flf", "find recently changed files", s -> {
+        tm.putKeyMap(VimMode.COMMAND, "<leader>flf", "find recently changed files", s -> {
             //based on time range: find ./ -maxdepth 3 -type f -mtime -5
             //sorts: find ./ -type f -exec stat -c "%Y %n" {} + | sort -k1n
             //best so far: find . -type f -name "*.txt" -print0 | xargs -0 ls -t
-            List<String> options = exec("find", getCurrentPath().toAbsolutePath().toString(), "-type f", "-print0",
+            List<String> options = sb.exec("find", getCurrentPath().toAbsolutePath().toString(), "-type f", "-print0",
                     "| xargs -0 ls " +
                             "-t");
             telescope(options, lineResult -> {
@@ -317,43 +311,43 @@ public class VKeyMaps {
             });
             return null;//no mapping
         });
-        putKeyMap(VimMode.COMMAND, "<leader>fb", "find buffer", s -> {
+        tm.putKeyMap(VimMode.COMMAND, "<leader>fb", "find buffer", s -> {
             telescope(vimEng.getView().getBufferFilenames(), lineResult -> {
                 harpoons.add(Harpoons.CLIPBOARD, lineResult.getContent());
             });
             return null;//no mapping
         });
-        putKeyMap(VimMode.COMMAND, "<leader>gl", "list git branches", s -> {
-            telescope(exec("git", "branch", "-a"), lineResult -> {
+        tm.putKeyMap(VimMode.COMMAND, "<leader>gl", "list git branches", s -> {
+            telescope(sb.exec("git", "branch", "-a"), lineResult -> {
                 //TODO use git clipboard
                 harpoons.add(Harpoons.CLIPBOARD, lineResult.getContent());
             });
             return null;//no mapping
         });
-        putKeyMap(VimMode.COMMAND, "<leader>gsha", "get latest SHA of git branch", s -> {
-            telescope(exec("git", "log", "-n", "1"), lineResult -> {
+        tm.putKeyMap(VimMode.COMMAND, "<leader>gsha", "get latest SHA of git branch", s -> {
+            telescope(sb.exec("git", "log", "-n", "1"), lineResult -> {
                 //TODO use latest git sha var or clipboard?
                 harpoons.add(Harpoons.CLIPBOARD, lineResult.getContent());
             });
             return null;//no mapping
         });
-        putKeyMap(VimMode.COMMAND, "<leader>gl", "list git branches", s -> {
-            telescope(exec("git", "branch", "-a"), lineResult -> {
+        tm.putKeyMap(VimMode.COMMAND, "<leader>gl", "list git branches", s -> {
+            telescope(sb.exec("git", "branch", "-a"), lineResult -> {
                 //TODO use latest git sha var or clipboard?
                 harpoons.add(Harpoons.CLIPBOARD, lineResult.getContent());
             });
             return null;//no mapping
         });
 
-        putKeyMap(VimMode.COMMAND, "<c-i>", "go to next or go in", s -> {
+        tm.putKeyMap(VimMode.COMMAND, "<c-i>", "go to next or go in", s -> {
             //telescope(VKeyMaps::getBufferFilenames, System.out::println);
             return null;//no mapping
         });
-        putKeyMap(VimMode.COMMAND, "<c-o>", "go to prev or go out", s -> {
+        tm.putKeyMap(VimMode.COMMAND, "<c-o>", "go to prev or go out", s -> {
             //telescope(VKeyMaps::getBufferFilenames, System.out::println);
             return null;//no mapping
         });
-        putKeyMap(VimMode.COMMAND, "<leader>hl", "list harpoon files", s -> {
+        tm.putKeyMap(VimMode.COMMAND, "<leader>hl", "list harpoon files", s -> {
             telescope(harpoons.get(Harpoons.FILES).list(), line -> {
                 //TODO navigate to file
             });
@@ -366,22 +360,22 @@ public class VKeyMaps {
         - list of possible values
         - maintain list
          */
-        putKeyMap(VimMode.COMMAND, "<leader>ha", "add file/buffer to harpoon", s -> {
+        tm.putKeyMap(VimMode.COMMAND, "<leader>ha", "add file/buffer to harpoon", s -> {
             //Would love it to popup an editable version... I like the zindex idea again.
             harpoons.get(Harpoons.FILES).add(vimEng.getActiveBuf().getFilename());
             return null;//no mapping
         });
-        putKeyMap(VimMode.COMMAND, "<leader>hc", "clear harpoon list", s -> {
+        tm.putKeyMap(VimMode.COMMAND, "<leader>hc", "clear harpoon list", s -> {
             harpoons.get(Harpoons.FILES).clear();
             return null;//no mapping
         });
-        putKeyMap(VimMode.COMMAND, "<leader>hn", "switch to next file in list", s ->
+        tm.putKeyMap(VimMode.COMMAND, "<leader>hn", "switch to next file in list", s ->
                 ":e " + harpoons.get(Harpoons.FILES).next()
         );
-        putKeyMap(VimMode.COMMAND, "<leader>hp", "switch to prev file in list", s ->
+        tm.putKeyMap(VimMode.COMMAND, "<leader>hp", "switch to prev file in list", s ->
                 ":e " + harpoons.get(Harpoons.FILES).prev()
         );
-        putKeyMap(VimMode.COMMAND, "<leader>ec", "create file (think echelon shhh)",
+        tm.putKeyMap(VimMode.COMMAND, "<leader>ec", "create file (think echelon shhh)",
                 s -> {
                     //TODO
                     //Just create in the directory the source file is from.
@@ -393,7 +387,7 @@ public class VKeyMaps {
                     //vimEng.File.createFile();
                     return null;//no mapping
                 });
-        putKeyMap(VimMode.COMMAND, "<leader>em", "move file",
+        tm.putKeyMap(VimMode.COMMAND, "<leader>em", "move file",
                 s -> {
                     //TODO
                     //try predict which directory to move to
@@ -402,52 +396,52 @@ public class VKeyMaps {
                     //vimEng.File.moveFile();
                     return null;//no mapping
                 });
-        putKeyMap(VimMode.COMMAND, "<leader>er", "rename file/echelon",
+        tm.putKeyMap(VimMode.COMMAND, "<leader>er", "rename file/echelon",
                 s -> {
                     //TODO
                     //vimEng.File.renameFile();
                     return null;//no mapping
                 });
-        putKeyMap(VimMode.COMMAND, "<leader>ecd", "create directory",
+        tm.putKeyMap(VimMode.COMMAND, "<leader>ecd", "create directory",
                 s -> {
                     //TODO
                     //vimEng.File.createDir();
                     return null;//no mapping
                 });
-        putKeyMap(VimMode.COMMAND, "<leader>erd", "rename directory",
+        tm.putKeyMap(VimMode.COMMAND, "<leader>erd", "rename directory",
                 s -> {
                     //TODO
                     //vimEng.File.renameDir();
                     return null;//no mapping
                 });
-        putKeyMap(VimMode.COMMAND, "<leader>emd", "move directory",
+        tm.putKeyMap(VimMode.COMMAND, "<leader>emd", "move directory",
                 s -> {
                     //TODO
                     //vimEng.File.renameDir();
                     return null;//no mapping
                 });
-        putKeyMap(List.of(VimMode.INSERT, VimMode.COMMAND), "<c-d><c-u>", "go up a directory (global)",
+        tm.putKeyMap(List.of(VimMode.INSERT, VimMode.COMMAND), "<c-d><c-u>", "go up a directory (global)",
                 s -> {
                     harpoons.get(Harpoons.DIRS).current();
                     return null;//no mapping
                 });
-        putKeyMap(VimMode.COMMAND, "<leader>vl", "see/find all current variables", s -> {
+        tm.putKeyMap(VimMode.COMMAND, "<leader>vl", "see/find all current variables", s -> {
             //List<String> varNames = var_clipboards.getAllVars();
             //varNames.addAll(var_dirs.getAllVars());
             //telescope(varNames, line -> varNames);  //want to copy to clipboard?
             return null;//no mapping
         });
-        putKeyMap(List.of(VimMode.INSERT, VimMode.FUZZY_FIND), "<leader>", "desc", s -> {
+        tm.putKeyMap(List.of(VimMode.INSERT, VimMode.FUZZY_FIND), "<leader>", "desc", s -> {
             vimEng.writeBuf(" ");
             System.out.println("Typed a space!");
             return null;//no mapping
         });
-        putKeyMap(VimMode.COMMAND, "n", "desc", s -> {
+        tm.putKeyMap(VimMode.COMMAND, "n", "desc", s -> {
             //findForward(getIntVar("search_buf_no"));
             //TODO
             return null;//no mapping
         });
-        /*putKeyMap(VimMode.COMMAND, ":grep", "desc", s -> {
+        /*tm.putKeyMap(VimMode.COMMAND, ":grep", "desc", s -> {
             //Consumer<List<TeleResult<String>>> resultConsumer =
             //        (str) -> {
                         //TODO Does buf exist?
@@ -459,17 +453,17 @@ public class VKeyMaps {
 //                "-R"), resultConsumer);
             return null;//no mapping
         });*/
-        putKeyMap(VimMode.COMMAND, ":get_routing_expr", "desc", s -> {
-            List<String> output = exec("/Users/ddawkins/Developer/scripts/getRoutingConfig.sh");
+        tm.putKeyMap(VimMode.COMMAND, ":get_routing_expr", "desc", s -> {
+            List<String> output = sb.exec("/Users/ddawkins/Developer/scripts/getRoutingConfig.sh");
 //            int newBuf = getView().vsplitRight(getActiveBufNo(), "expr_routing", BorderType.LEFT);
 //            getView().getBuffer(newBuf).setLinesFromStream(output);
 //            getView().setActiveBufNo(newBuf);
             return null;//no mapping
         });
-        putKeyMap(VimMode.COMMAND, "<leader>nml", "desc", s -> {
+        tm.putKeyMap(VimMode.COMMAND, "<leader>nml", "desc", s -> {
             return ":e /Users/ddawkins/Developer/notes/ml.md<enter>";
         });
-        putKeyMap(VimMode.COMMAND, "<leader>rt", "run unit test", s -> {
+        tm.putKeyMap(VimMode.COMMAND, "<leader>rt", "run unit test", s -> {
             //TODO
             //int linePos = findLineAbove("@Test");
             //or findClosestMethodName();
@@ -502,37 +496,11 @@ public class VKeyMaps {
 
     private void telescope(List<String> options, Consumer<Line> consumer) {
         //Support delete, tab completions as well from AI yes?
-        telescope = Telescope.builder(vimEng, this)
+        telescope = Telescope.builder(vimEng, tm)
                 .options(options)
                 .consumer(consumer)
                 .timeout(30, TimeUnit.SECONDS)                 // shorter timeout
                 .buildAndRun();
-    }
-
-    public void reMap(List<VimMode> vimModes, String left, String desc, Function<String, String> remapFunc, boolean hideMapping) {
-        for (VimMode vimMode : vimModes) {
-            TrieNode node = mappings.get(vimMode).find(left);
-            if (node != null) {
-                if (!node.getLastFunc().equals(remapFunc)) {
-                    node.addFunction(desc, remapFunc);
-                }
-            }
-        }
-    }
-
-    private int execScriptToBuffer(String filename, String script) {
-        try {
-            Path path = Files.writeString(Path.of(filename), script);
-            List<String> output = exec(path.getFileName().toString());
-//            int newBuf = getView().vsplitRight(getActiveBufNo(), "expr_routing", BorderType.LEFT);
-//            getView().getBuffer(newBuf).setLinesFromStream(output);
-//            getView().setActiveBufNo(newBuf);
-//TODO fix
-            //return newBuf;
-        } catch (Exception ep) {
-            ep.printStackTrace();
-        }
-        return -1;
     }
 
     public static Stream<String> streamPath(Path dir, Predicate<Path> filter) {
@@ -549,129 +517,19 @@ public class VKeyMaps {
         }
     }
 
-    private void shiftMap(Map<KeyStroke, String> keyStrokeToStringMapping, char chr) {
-        keyStrokeToStringMapping.put(new KeyStroke(chr, false, false, true), "" + chr);
+    private void shiftMap(char chr) {
+        tm.addStrokeMapping(new KeyStroke(chr, false, false, true), "" + chr);
     }
 
     private void createSimpleCharMappings() {
         for (int i = 32; i < 127; i++) {
             final String chr = "" + (char) i;
-            putKeyMap(List.of(VimMode.INSERT, VimMode.SEARCH, VimMode.FUZZY_FIND), chr, "simple key mapping",
+            tm.putKeyMap(List.of(VimMode.INSERT, VimMode.SEARCH, VimMode.FUZZY_FIND), chr, "simple key mapping",
                     s -> {
                         vimEng.getActiveBuf().insertIntoLine(chr);
                         return null;//no mapping
                     }, true);
         }
-    }
-
-    private List<String> exec(String cmd, String... args) {
-        String output = ProcBuilder.run(cmd, args);
-        String[] lines = output.split("\n");
-        return Arrays.asList(lines);
-    }
-
-    public void mapRecursively(List<TrieNode> nodes, int depth, VimMode vimMode, String keyStrokes) {
-        if (keyStrokes == null || depth > 10) {
-            return;
-        }
-        TrieNode foundNode = mappings.get(vimMode).find(keyStrokes);
-        if (foundNode == null) {
-            return;
-        }
-        nodes.add(foundNode);
-        if (foundNode.isWord()) {
-            String funcResult = foundNode.getLastFunc().apply(keyStrokes);
-            if (!".".equals(keyStrokes)) {
-                prevFunctionRun = foundNode.getLastFunc();
-            }
-            mapRecursively(nodes, depth + 1, vimMode, funcResult);
-        }
-    }
-
-    public String toVim(List<KeyStroke> keyStrokes) {
-        StringBuffer sb = new StringBuffer();
-        for (KeyStroke keyStroke : keyStrokes) {
-            sb.append(keyStrokeToStringMapping.get(keyStroke));
-        }
-        String ret = sb.toString();
-        return ret;
-    }
-
-    public List<TrieNode> putKeyMap(List<VimMode> vimModes,
-                               String left,
-                               String description,
-                               Function<String, String> rightFunc) {
-        return putKeyMap(vimModes, left, description, rightFunc, false);
-    }
-
-    public List<TrieNode> putKeyMap(List<VimMode> vimModes,
-                               String left,
-                               String description,
-                               Function<String, String> rightFunc,
-                               boolean systemMap) {
-        return putKeyMap(vimModes, List.of(left), description, rightFunc, systemMap);
-    }
-
-    public TrieNode putKeyMap(VimMode vimMode,
-                               String left,
-                               String description,
-                               Function<String, String> rightFunc) {
-        return putKeyMap(vimMode, left, description, rightFunc, false);
-    }
-
-    public List<TrieNode> putKeyMap(List<VimMode> vimModes,
-                               List<String> lefts,
-                               String description,
-                               Function<String, String> rightFunc) {
-        return putKeyMap(vimModes, lefts, description, rightFunc, false);
-    }
-
-    /**
-     * @param vimMode
-     * @param left
-     * @param description
-     * @param rightFunc
-     * @param hideMap
-     */
-    public TrieNode putKeyMap(VimMode vimMode,
-                               String left,
-                               String description,
-                               Function<String, String> rightFunc,
-                               boolean hideMap) {
-        mappings.computeIfAbsent(vimMode, k -> new Trie());
-        TrieNode node = mappings.get(vimMode).insert(left, description, rightFunc);
-        node.setHideMapping(hideMap);
-        keysMappings.add(left);
-        return node;
-    }
-
-    public List<TrieNode> putKeyMap(VimMode vimMode,
-                                    List<String> lefts,
-                                    String description,
-                                    Function<String, String> rightFunc,
-                                    boolean systemMap) {
-        return putKeyMap(List.of(vimMode), lefts, description, rightFunc, systemMap);
-    }
-
-    public List<TrieNode> putKeyMap(VimMode vimMode,
-                                    List<String> lefts,
-                                    String description,
-                                    Function<String, String> rightFunc) {
-        return putKeyMap(List.of(vimMode), lefts, description, rightFunc, false);
-    }
-
-    public List<TrieNode> putKeyMap(List<VimMode> vimModes,
-                               List<String> lefts,
-                               String description,
-                               Function<String, String> rightFunc,
-                               boolean systemMap) {
-        List<TrieNode> retNodes = new ArrayList<>();
-        for (VimMode vimMode : vimModes) {
-            for (String left : lefts) {
-                putKeyMap(vimMode, left, description, rightFunc, systemMap);
-            }
-        }
-        return retNodes;
     }
 
 }

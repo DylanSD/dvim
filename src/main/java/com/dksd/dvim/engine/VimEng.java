@@ -14,10 +14,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.dksd.dvim.mapping.trie.TrieMapManager;
 import com.dksd.dvim.view.VimMode;
 import com.dksd.dvim.buffer.Buf;
-import com.dksd.dvim.key.VKeyMaps;
-import com.dksd.dvim.key.trie.TrieNode;
+import com.dksd.dvim.mapping.VKeyMaps;
+import com.dksd.dvim.mapping.trie.TrieNode;
 import com.dksd.dvim.utils.SFormatter;
 import com.dksd.dvim.view.Line;
 import com.dksd.dvim.view.View;
@@ -250,7 +251,7 @@ public class VimEng {
     }
 
     List<TrieNode> foundNodes = new ArrayList<>();
-    public void handleKey(VKeyMaps vKeyMaps, KeyStroke key) {
+    public void handleKey(TrieMapManager trieMapManager, KeyStroke key) {
         if (key.getKeyType().equals(KeyType.EOF)) {
             System.exit(0);
         }
@@ -261,9 +262,9 @@ public class VimEng {
 
         keyStrokes.add(key);
         updateStatus();
-        String vimCommands = vKeyMaps.toVim(keyStrokes);
+        String vimCommands = trieMapManager.toVim(keyStrokes);
         foundNodes.clear();
-        vKeyMaps.mapRecursively(foundNodes, 0, vimMode.get(), vimCommands);
+        trieMapManager.mapRecursively(foundNodes, 0, vimMode.get(), vimCommands);
         if (foundNodes == null) {
             System.out.println("Did not find a command to run: " + vimCommands);
         } else if (!foundNodes.isEmpty() && foundNodes.getFirst().isWord()) {

@@ -1,7 +1,8 @@
 package com.dksd.dvim;
 
 import com.dksd.dvim.engine.VimEng;
-import com.dksd.dvim.key.VKeyMaps;
+import com.dksd.dvim.mapping.VKeyMaps;
+import com.dksd.dvim.mapping.trie.TrieMapManager;
 import com.googlecode.lanterna.TerminalSize;
 import com.googlecode.lanterna.input.KeyStroke;
 import com.googlecode.lanterna.screen.TerminalScreen;
@@ -89,7 +90,8 @@ public class Main {
 
             ExecutorService threadPool = Executors.newVirtualThreadPerTaskExecutor();
             VimEng ve = new VimEng(screen, threadPool);
-            VKeyMaps vKeyMaps = new VKeyMaps(ve);
+            TrieMapManager trieMapManager = new TrieMapManager();
+            VKeyMaps vKeyMaps = new VKeyMaps(ve, trieMapManager);
             ve.updateStatus();
             /*
             You can attach a resize listener to your Terminal object, which will invoke a callback method (usually on a
@@ -132,7 +134,7 @@ public class Main {
                 KeyStroke key = screen.readInput();
                 //long st = System.currentTimeMillis();
                 if (key != null) {
-                    ve.handleKey(vKeyMaps, key);
+                    ve.handleKey(trieMapManager, key);
                 }
                 //long ed = System.currentTimeMillis();
                 //System.out.println("Time: " + (ed - st));

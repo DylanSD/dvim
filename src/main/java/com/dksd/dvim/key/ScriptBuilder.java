@@ -1,17 +1,20 @@
 package com.dksd.dvim.key;
 
+import org.buildobjects.process.ProcBuilder;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
-public class Scriptbuilder {
+public class ScriptBuilder {
 
     List<String> scriptLines = new ArrayList<>();
 
-    public Scriptbuilder withLine(String line) {
+    public ScriptBuilder withLine(String line) {
         scriptLines.add(line);
         return this;
     }
@@ -44,5 +47,26 @@ public class Scriptbuilder {
 
         }
         return null;
+    }
+
+    private int execScriptToBuffer(String filename, String script) {
+        try {
+            Path path = Files.writeString(Path.of(filename), script);
+            List<String> output = exec(path.getFileName().toString());
+//            int newBuf = getView().vsplitRight(getActiveBufNo(), "expr_routing", BorderType.LEFT);
+//            getView().getBuffer(newBuf).setLinesFromStream(output);
+//            getView().setActiveBufNo(newBuf);
+//TODO fix
+            //return newBuf;
+        } catch (Exception ep) {
+            ep.printStackTrace();
+        }
+        return -1;
+    }
+
+    public List<String> exec(String cmd, String... args) {
+        String output = ProcBuilder.run(cmd, args);
+        String[] lines = output.split("\n");
+        return Arrays.asList(lines);
     }
 }

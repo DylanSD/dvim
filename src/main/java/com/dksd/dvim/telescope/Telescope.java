@@ -4,7 +4,8 @@ import com.dksd.dvim.buffer.Buf;
 import com.dksd.dvim.engine.VimEng;
 import com.dksd.dvim.event.EventType;
 import com.dksd.dvim.event.VimEvent;
-import com.dksd.dvim.key.VKeyMaps;
+import com.dksd.dvim.mapping.VKeyMaps;
+import com.dksd.dvim.mapping.trie.TrieMapManager;
 import com.dksd.dvim.view.Line;
 import com.dksd.dvim.view.View;
 import com.dksd.dvim.view.VimMode;
@@ -52,7 +53,7 @@ public final class Telescope {
     private final VimEng vimEng;
     private final List<String> options;
     private final Consumer<Line> consumer;
-    private final VKeyMaps vKeyMaps;
+    private final TrieMapManager trieMapManager;
     private final ExecutorService executorService;
 
     /* --------------------------------------------------------------- *
@@ -84,7 +85,7 @@ public final class Telescope {
         this.timeout = builder.timeout;
         this.timeoutUnit = Objects.requireNonNull(builder.timeoutUnit);
         this.matcher = builder.matcher;   // may be null → lazy init later
-        this.vKeyMaps = builder.vKeyMaps;
+        this.trieMapManager = builder.trieMapManager;
         this.executorService = builder.executorService;
 
         start(); //non-blocking
@@ -160,14 +161,14 @@ public final class Telescope {
      *  Step 3 – default key‑maps (<Esc>, <Up>, <Down>, <Enter>)        *
      * --------------------------------------------------------------- */
     private void registerDefaultKeyMaps() {
-        vKeyMaps.reMap(List.of(VimMode.COMMAND), "<esc>", "escape telescope",
+        trieMapManager.reMap(List.of(VimMode.COMMAND), "<esc>", "escape telescope",
                 is -> {
                     revertTelescopeView(vimEng, currView, telescopeView);
                     return null;
                 }, true);
 
         // <Up> – move selection up
-        vKeyMaps.reMap(List.of(VimMode.INSERT, VimMode.COMMAND),
+        trieMapManager.reMap(List.of(VimMode.INSERT, VimMode.COMMAND),
                 "<up>",
                 "move selection up",
                 is -> {
@@ -177,14 +178,14 @@ public final class Telescope {
                 true);
 
         // <Down> – move selection down
-        vKeyMaps.reMap(List.of(VimMode.INSERT, VimMode.COMMAND), "<down>", "move selection down",
+        trieMapManager.reMap(List.of(VimMode.INSERT, VimMode.COMMAND), "<down>", "move selection down",
                 is -> {
                     moveArrowInResults(resultsBuf, 1);
                     return null;
                 }, true);
 
         // <Enter> – confirm current selection
-        vKeyMaps.reMap(List.of(VimMode.INSERT, VimMode.COMMAND), "<enter>", "accept selection",
+        trieMapManager.reMap(List.of(VimMode.INSERT, VimMode.COMMAND), "<enter>", "accept selection",
                 is -> {
                     Line selected = resultsBuf.getCurrentLine();
                     Line inputSel = inputBuf.getCurrentLine();
@@ -227,8 +228,8 @@ public final class Telescope {
      *  Builder – fluent API                                            *
      * --------------------------------------------------------------- */
     public static Builder builder(VimEng vimEng,
-                                  VKeyMaps vKeyMaps) {
-        return new Builder(vimEng, vKeyMaps);
+                                  TrieMapManager trieMapManager) {
+        return new Builder(vimEng, trieMapManager);
     }
 
     public void cancelFuture() {
@@ -240,7 +241,7 @@ public final class Telescope {
         private final VimEng vimEng;
         private List<String> options;
         private Consumer<Line> consumer;
-        private final VKeyMaps vKeyMaps;
+        private final TrieMapManager trieMapManager;
         private ExecutorService executorService;
 
         // optional – sensible defaults
@@ -249,9 +250,9 @@ public final class Telescope {
         private FuzzyMatcherV1 matcher = null;      // lazy‑created if null
 
         private Builder(VimEng vimEng,
-                        VKeyMaps vKeyMaps) {
+                        TrieMapManager trieMapManager) {
             this.vimEng = vimEng;
-            this.vKeyMaps = vKeyMaps;
+            this.trieMapManager = trieMapManager;
         }
 
         /** Change the amount of time we wait for a selection before timing out. */

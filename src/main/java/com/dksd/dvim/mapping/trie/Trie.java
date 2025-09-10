@@ -1,4 +1,4 @@
-package com.dksd.dvim.key.trie;
+package com.dksd.dvim.mapping.trie;
 
 import java.util.function.Function;
 
