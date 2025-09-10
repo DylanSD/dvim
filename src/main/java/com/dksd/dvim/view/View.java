@@ -22,8 +22,11 @@ import com.dksd.dvim.buffer.BufferMode;
 import com.dksd.dvim.event.VimEvent;
 import com.dksd.dvim.event.VimListener;
 import com.dksd.dvim.higlight.JavaSyntaxHighlighter;
+import com.dksd.dvim.mapping.trie.TrieMapManager;
+import com.dksd.dvim.mapping.trie.TrieNode;
 import com.googlecode.lanterna.Symbols;
 import com.googlecode.lanterna.TerminalPosition;
+import com.googlecode.lanterna.TerminalSize;
 import com.googlecode.lanterna.TextCharacter;
 import com.googlecode.lanterna.TextColor;
 import com.googlecode.lanterna.graphics.TextGraphics;
@@ -58,10 +61,12 @@ public class View {
     private JavaSyntaxHighlighter syntaxHighlighter = new JavaSyntaxHighlighter();
     private final LinkedBlockingQueue<Future<?>> futures = new LinkedBlockingQueue<>();
     private Line tabComplete;
+    private final TrieMapManager tabCompleteTrie;
 
-    public View(String viewName, TerminalScreen screen, ExecutorService executor) {
+    public View(String viewName, TerminalScreen screen, ExecutorService executor, TrieMapManager tabCompleteTrie) {
         this.name = viewName;
         this.executor = executor;
+        this.tabCompleteTrie = tabCompleteTrie;
 
         Buf statusBuf = createBuf(
                 STATUS_BUFFER,
@@ -233,6 +238,10 @@ public class View {
                 Buf tabBuf = buffers.get(tabBufNo);
                 tabBuf.calcPopoverScrollView(getActiveBuf().getRow(),
                         screen.getTerminalSize().getColumns(), screen.getTerminalSize().getRows());
+                textGraphics.fillRectangle(new TerminalPosition(tabBuf.getScrollView().getColStart(), tabBuf.getScrollView().getRowStart()),
+                        new TerminalSize(tabBuf.getScrollView().getHeight(), tabBuf.getScrollView().getWidth()), ' ');
+
+                //TODO draw background so not confusing.
                 drawBuffer(screen, textGraphics, tabBuf, futures);
             }
 
@@ -497,5 +506,9 @@ public class View {
 
     public void setTabComplete(Line cLine) {
         this.tabComplete = cLine;
+    }
+
+    public TrieMapManager getTabTrie() {
+        return tabCompleteTrie;
     }
 }

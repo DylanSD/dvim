@@ -136,4 +136,14 @@ public class TrieMapManager {
     public void addStrokeMapping(KeyStroke keyStroke, String chr) {
         keyStrokeToStringMapping.put(keyStroke, chr);
     }
+
+    public void mapWords(List<TrieNode> foundNodes, String cont) {
+        TrieNode foundNode = mappings.get(VimMode.TAB_COMPLETE).find(cont);
+        if (foundNode == null) {
+            return;
+        }
+        if (foundNode.isWord()) {
+            foundNodes.add(foundNode);
+        }
+    }
 }

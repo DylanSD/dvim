@@ -4,7 +4,6 @@ import com.dksd.dvim.buffer.Buf;
 import com.dksd.dvim.engine.VimEng;
 import com.dksd.dvim.event.EventType;
 import com.dksd.dvim.event.VimEvent;
-import com.dksd.dvim.mapping.VKeyMaps;
 import com.dksd.dvim.mapping.trie.TrieMapManager;
 import com.dksd.dvim.view.Line;
 import com.dksd.dvim.view.View;
@@ -287,7 +286,7 @@ public final class Telescope {
         }
     }
 
-    private void moveArrowInResults(Buf resultsBuf,
+    public static void moveArrowInResults(Buf resultsBuf,
                                     int rowDelta) {
         if (resultsBuf.getCurrentLine() != null) {
             resultsBuf.getCurrentLine().setIndicatorStr(null);

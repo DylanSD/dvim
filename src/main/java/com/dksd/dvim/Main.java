@@ -89,7 +89,8 @@ public class Main {
             //screen.refresh();
 
             ExecutorService threadPool = Executors.newVirtualThreadPerTaskExecutor();
-            VimEng ve = new VimEng(screen, threadPool);
+            TrieMapManager tabCompleteTrieManager = new TrieMapManager();
+            VimEng ve = new VimEng(screen, threadPool, tabCompleteTrieManager);
             TrieMapManager trieMapManager = new TrieMapManager();
             VKeyMaps vKeyMaps = new VKeyMaps(ve, trieMapManager);
             ve.updateStatus();

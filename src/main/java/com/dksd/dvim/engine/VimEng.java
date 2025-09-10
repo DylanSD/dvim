@@ -44,11 +44,11 @@ public class VimEng {
     private AtomicLong lastClearKeys = new AtomicLong();
     private AtomicReference<String> activeView = new AtomicReference<>(START_VIEW);
 
-    public VimEng(TerminalScreen screen, ExecutorService threadPool) {
+    public VimEng(TerminalScreen screen, ExecutorService threadPool, TrieMapManager tabCompleteTrie) {
         terminalScreen = screen;
         this.threadPool = threadPool;
-        views.put(START_VIEW, new View(START_VIEW, screen, threadPool));
-        views.put(TELESCOPE_VIEW, new View(TELESCOPE_VIEW, screen, threadPool));
+        views.put(START_VIEW, new View(START_VIEW, screen, threadPool, tabCompleteTrie));
+        views.put(TELESCOPE_VIEW, new View(TELESCOPE_VIEW, screen, threadPool, tabCompleteTrie));
         newScheduledThread.scheduleWithFixedDelay(() -> {
             long st = System.currentTimeMillis();
             int hash = getView().hashCode();
@@ -188,7 +188,7 @@ public class VimEng {
         });
     }*/
 
-    private ExecutorService getThreadPool() {
+    public ExecutorService getThreadPool() {
         return threadPool;
     }
 

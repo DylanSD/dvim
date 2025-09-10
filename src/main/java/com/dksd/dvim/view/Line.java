@@ -4,9 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Line {
-    private int lineNumber;
-    private String content;
-    private String indicatorStr = null;
+    private volatile int lineNumber;
+    private volatile String content;
+    private volatile String indicatorStr = null;
 
     public Line(int lineNumber, String content, String indicatorStr) {
         this.lineNumber = lineNumber;
@@ -73,5 +73,14 @@ public class Line {
                 ", content='" + content + '\'' +
                 ", indicatorStr='" + indicatorStr + '\'' +
                 '}';
+    }
+
+    public String getWord(int col) {
+        for (int i = col - 1; i >= 0; i--) {
+            if (' ' == getContent().charAt(i)) {
+                return getContent().substring(i - col, col);
+            }
+        }
+        return null;
     }
 }
