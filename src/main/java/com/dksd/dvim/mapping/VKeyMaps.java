@@ -3,36 +3,24 @@ package com.dksd.dvim.mapping;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-import com.dksd.dvim.buffer.Buf;
 import com.dksd.dvim.engine.VimEng;
-import com.dksd.dvim.event.EventType;
-import com.dksd.dvim.event.VimEvent;
-import com.dksd.dvim.event.VimListener;
 import com.dksd.dvim.history.Harpoons;
 import com.dksd.dvim.key.ScriptBuilder;
 import com.dksd.dvim.mapping.trie.TrieMapManager;
-import com.dksd.dvim.mapping.trie.TrieNode;
-import com.dksd.dvim.telescope.TabCompletion;
-import com.dksd.dvim.telescope.Telescope;
-import com.dksd.dvim.view.View;
+import com.dksd.dvim.complete.TabCompletion;
+import com.dksd.dvim.complete.Telescope;
 import com.dksd.dvim.view.VimMode;
 import com.dksd.dvim.view.Line;
 import com.googlecode.lanterna.input.KeyStroke;
 import com.googlecode.lanterna.input.KeyType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static com.dksd.dvim.telescope.Telescope.moveArrowInResults;
 
 
 public class VKeyMaps {
@@ -179,9 +167,13 @@ public class VKeyMaps {
             vimEng.splitToNextLine();
             return null;//no mapping
         }, true);
+        tm.putKeyMap(VimMode.COMMAND, "<enter>", "desc", s -> {
+            //NOOP
+            return null;//no mapping
+        }, true);
         tm.putKeyMap(List.of(VimMode.INSERT, VimMode.COMMAND), "<tab>", "tab completion or insert spaces", s -> {
             TabCompletion tabCompletion = new TabCompletion(vimEng.getThreadPool());
-            tabCompletion.handleTabComplete(vimEng, tm);
+            tabCompletion.handleTabComplete(List.of("optione one", "two", "three"), vimEng);
             return null;//no mapping
         }, true);
         tm.putKeyMap(List.of(VimMode.COMMAND, VimMode.INSERT), "<home>", "desc", s -> {
@@ -550,4 +542,7 @@ public class VKeyMaps {
         }
     }
 
+    public TrieMapManager getTrieManager() {
+        return tm;
+    }
 }

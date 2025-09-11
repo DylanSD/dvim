@@ -43,12 +43,13 @@ public class VimEng {
     private AtomicLong lastDrawn = new AtomicLong();
     private AtomicLong lastClearKeys = new AtomicLong();
     private AtomicReference<String> activeView = new AtomicReference<>(START_VIEW);
+    private VKeyMaps vKeyMaps;
 
-    public VimEng(TerminalScreen screen, ExecutorService threadPool, TrieMapManager tabCompleteTrie) {
+    public VimEng(TerminalScreen screen, ExecutorService threadPool) {
         terminalScreen = screen;
         this.threadPool = threadPool;
-        views.put(START_VIEW, new View(START_VIEW, screen, threadPool, tabCompleteTrie));
-        views.put(TELESCOPE_VIEW, new View(TELESCOPE_VIEW, screen, threadPool, tabCompleteTrie));
+        views.put(START_VIEW, new View(START_VIEW, screen, threadPool));
+        views.put(TELESCOPE_VIEW, new View(TELESCOPE_VIEW, screen, threadPool));
         newScheduledThread.scheduleWithFixedDelay(() -> {
             long st = System.currentTimeMillis();
             int hash = getView().hashCode();
@@ -285,6 +286,14 @@ public class VimEng {
 
     public void cancelTelescope() {
         getView(TELESCOPE_VIEW).reset();
+    }
+
+    public void setKeyMaps(VKeyMaps vKeyMaps) {
+        this.vKeyMaps = vKeyMaps;
+    }
+
+    public VKeyMaps getKeyMaps() {
+        return vKeyMaps;
     }
 }
 

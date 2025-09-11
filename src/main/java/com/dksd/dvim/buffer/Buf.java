@@ -250,6 +250,14 @@ public class Buf {
         return name;
     }
 
+    public void setLinesStr(List<String> lines) {
+        List<Line> l = new ArrayList<>();
+        for (int i = 0; i < lines.size(); i++) {
+            l.add(new Line(i, lines.get(i), null));
+        }
+        setLines(l);
+    }
+
     public void setLines(List<Line> keptLines) {
         this.lines.clear();
         this.lines.addAll(keptLines);

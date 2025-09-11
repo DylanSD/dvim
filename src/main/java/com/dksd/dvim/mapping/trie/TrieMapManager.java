@@ -35,6 +35,9 @@ public class TrieMapManager {
 
     public void reMap(List<VimMode> vimModes, String left, String desc, Function<String, String> remapFunc, boolean hideMapping) {
         for (VimMode vimMode : vimModes) {
+//            if (!mappings.containsKey(vimMode)) {
+//                putKeyMap(vimModes, left, desc, remapFunc, hideMapping);
+//            }
             TrieNode node = mappings.get(vimMode).find(left);
             if (node != null) {
                 if (!node.getLastFunc().equals(remapFunc)) {
@@ -137,8 +140,12 @@ public class TrieMapManager {
         keyStrokeToStringMapping.put(keyStroke, chr);
     }
 
-    public void mapWords(List<TrieNode> foundNodes, String cont) {
-        TrieNode foundNode = mappings.get(VimMode.TAB_COMPLETE).find(cont);
+    public void mapWords(List<TrieNode> foundNodes, VimMode vimMode, String cont) {
+        if (!mappings.containsKey(vimMode)) {
+            System.out.println("Could not find the mapping/complete: " + cont);
+            return;
+        }
+        TrieNode foundNode = mappings.get(vimMode).find(cont);
         if (foundNode == null) {
             return;
         }

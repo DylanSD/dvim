@@ -89,10 +89,10 @@ public class Main {
             //screen.refresh();
 
             ExecutorService threadPool = Executors.newVirtualThreadPerTaskExecutor();
-            TrieMapManager tabCompleteTrieManager = new TrieMapManager();
-            VimEng ve = new VimEng(screen, threadPool, tabCompleteTrieManager);
+            VimEng ve = new VimEng(screen, threadPool);
             TrieMapManager trieMapManager = new TrieMapManager();
             VKeyMaps vKeyMaps = new VKeyMaps(ve, trieMapManager);
+            ve.setKeyMaps(vKeyMaps);
             ve.updateStatus();
             /*
             You can attach a resize listener to your Terminal object, which will invoke a callback method (usually on a

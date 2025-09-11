@@ -1,4 +1,4 @@
-package com.dksd.dvim.telescope;
+package com.dksd.dvim.complete;
 
 import com.dksd.dvim.buffer.Buf;
 import com.dksd.dvim.engine.VimEng;
@@ -53,7 +53,7 @@ public final class Telescope {
     private final List<String> options;
     private final Consumer<Line> consumer;
     private final TrieMapManager trieMapManager;
-    private final ExecutorService executorService;
+        private final ExecutorService executorService;
 
     /* --------------------------------------------------------------- *
      *  Optional customisation (builder defaults)                        *

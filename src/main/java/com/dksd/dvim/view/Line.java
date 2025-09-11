@@ -78,7 +78,7 @@ public class Line {
     public String getWord(int col) {
         for (int i = col - 1; i >= 0; i--) {
             if (' ' == getContent().charAt(i)) {
-                return getContent().substring(i - col, col);
+                return getContent().substring(Math.max(0, i - col), Math.min(col, getContent().length()));
             }
         }
         return null;

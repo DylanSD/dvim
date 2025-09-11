@@ -61,12 +61,10 @@ public class View {
     private JavaSyntaxHighlighter syntaxHighlighter = new JavaSyntaxHighlighter();
     private final LinkedBlockingQueue<Future<?>> futures = new LinkedBlockingQueue<>();
     private Line tabComplete;
-    private final TrieMapManager tabCompleteTrie;
 
-    public View(String viewName, TerminalScreen screen, ExecutorService executor, TrieMapManager tabCompleteTrie) {
+    public View(String viewName, TerminalScreen screen, ExecutorService executor) {
         this.name = viewName;
         this.executor = executor;
-        this.tabCompleteTrie = tabCompleteTrie;
 
         Buf statusBuf = createBuf(
                 STATUS_BUFFER,
@@ -508,7 +506,4 @@ public class View {
         this.tabComplete = cLine;
     }
 
-    public TrieMapManager getTabTrie() {
-        return tabCompleteTrie;
-    }
 }

@@ -1,4 +1,4 @@
-package com.dksd.dvim.telescope;
+package com.dksd.dvim.complete;
 
 import com.dksd.dvim.buffer.Buf;
 import com.dksd.dvim.engine.VimEng;
@@ -15,27 +15,29 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import static com.dksd.dvim.telescope.Telescope.moveArrowInResults;
+import static com.dksd.dvim.complete.Telescope.moveArrowInResults;
 
 public class TabCompletion {
 
     private static final long TIMEOUT = 1000;
     private CompletableFuture<Line> resultFuture;
     private final ExecutorService executorService;
-
+    private final TrieMapManager tabCompleteTrie = new TrieMapManager();
 
     public TabCompletion(ExecutorService executorService) {
         this.executorService = executorService;
         resultFuture = new CompletableFuture<>();
     }
 
-    public CompletableFuture<Line> handleTabComplete(VimEng vimEng, TrieMapManager tm) {
+    public CompletableFuture<Line> handleTabComplete(List<String> options, VimEng vimEng) {
         int r = vimEng.getRow();
         int c = vimEng.getCol();
-        int bufNo = vimEng.getActiveBuf().getBufNo();
+        Buf activeBuf = vimEng.getActiveBuf();
         vimEng.getView().setTabComplete(vimEng.getCurrentLine());
         //Also call function, move to tab complete logic
         Buf tabBuf = vimEng.getView().getBufferByName(View.TAB_BUFFER);
+        tabBuf.setLinesStr(options);
+        TrieMapManager tm = vimEng.getKeyMaps().getTrieManager();
         tm.reMap(List.of(VimMode.INSERT, VimMode.COMMAND),
                 "<up>",
                 "move selection up",
@@ -64,10 +66,10 @@ public class TabCompletion {
                     return null;
                 }, true);
         vimEng.getView().addListener(vimEvent -> {
-            if (vimEvent.getBufNo() == bufNo && EventType.BUF_CHANGE.equals(vimEvent.getEventType())) {
-                String cont = vimEng.getView().getBuffer(bufNo).getLine(r).getWord(c);
+            if (vimEvent.getBufNo() == activeBuf.getBufNo() && EventType.BUF_CHANGE.equals(vimEvent.getEventType())) {
+                String cont = vimEng.getView().getBuffer(activeBuf.getBufNo()).getLine(r).getWord(c);
                 List<TrieNode> foundNodes = new ArrayList<>();
-                vimEng.getView().getTabTrie().mapWords(foundNodes, cont);
+                tabCompleteTrie.mapWords(foundNodes, vimEng.getVimMode(), cont);
                 List<Line> suggestedLines = new ArrayList<>();
                 for (int i = 0; i < foundNodes.size(); i++) {
                     TrieNode tn = foundNodes.get(i);
@@ -76,20 +78,18 @@ public class TabCompletion {
                 tabBuf.setLines(suggestedLines);
             }
         });
-        awaitResult();
+        awaitResult(activeBuf, c, vimEng.getCurrentLine());
         return resultFuture;
     }
 
-    private void awaitResult() {
+    private void awaitResult(Buf activeBuf, int col, Line original) {
         executorService.submit(() -> {
             try {
                 Line lineResult = resultFuture.get(TIMEOUT, TimeUnit.SECONDS);
                 if (lineResult != null) {
                     System.out.println("Telescope result: " + lineResult);
-                    //Figure out how to merge the results.
-                    //Nothing to do really.
-                    //Actually we should set the result into the buffer
-                    //revertTelescopeView(vimEng, currView, telescopeView);
+                    Line orig = activeBuf.getLine(original.getLineNumber());
+                    merge(activeBuf, orig, col, lineResult);
                     //consumer.accept(lineResult);
                 }
             } catch (Exception e) {
@@ -98,6 +98,10 @@ public class TabCompletion {
                 //revertTelescopeView(vimEng, currView, telescopeView);
             }
         });
+    }
+
+    private void merge(Buf buf, Line orig, int col, Line lineResult) {
+        buf.insertIntoLine(lineResult.getContent());//brutal
     }
 
 }

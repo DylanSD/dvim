@@ -7,5 +7,5 @@ public enum VimMode {
     GUI,
     VISUAL,
     ALL,
-    COMMAND_WINDOW, TAB_COMPLETE, FUZZY_FIND
+    COMMAND_WINDOW, FUZZY_FIND
 }
