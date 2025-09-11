@@ -4,8 +4,10 @@ import com.dksd.dvim.view.VimMode;
 import com.googlecode.lanterna.input.KeyStroke;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
@@ -14,6 +16,7 @@ public class TrieMapManager {
     private final Map<KeyStroke, String> keyStrokeToStringMapping = new ConcurrentHashMap<>();
     private final Map<VimMode, Trie> mappings = new ConcurrentHashMap<>();
     private Function<String, String> prevFunctionRun = null;
+    private Set<TrieNode> remappedNodes = new HashSet<>();
 
     public void mapRecursively(List<TrieNode> nodes, int depth, VimMode vimMode, String keyStrokes) {
         if (keyStrokes == null || depth > 10) {
@@ -42,6 +45,7 @@ public class TrieMapManager {
             if (node != null) {
                 if (!node.getLastFunc().equals(remapFunc)) {
                     node.addFunction(desc, remapFunc);
+                    remappedNodes.add(node);
                 }
             }
         }
@@ -151,6 +155,12 @@ public class TrieMapManager {
         }
         if (foundNode.isWord()) {
             foundNodes.add(foundNode);
+        }
+    }
+
+    public void removeRemappings() {
+        for (TrieNode remappedNode : remappedNodes) {
+            remappedNode.removeLastFunc();
         }
     }
 }

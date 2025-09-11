@@ -462,8 +462,9 @@ public class View {
         return eventListeners;
     }
 
-    public void addListener(VimListener vimListener) {
+    public VimListener addListener(VimListener vimListener) {
         this.eventListeners.add(vimListener);
+        return vimListener;
     }
 
     public void removeListeners() {
@@ -504,4 +505,7 @@ public class View {
         this.tabComplete = cLine;
     }
 
+    public void removeListener(VimListener vimListener) {
+        eventListeners.remove(vimListener);
+    }
 }

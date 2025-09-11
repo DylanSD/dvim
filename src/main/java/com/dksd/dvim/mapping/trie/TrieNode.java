@@ -43,6 +43,10 @@ public class TrieNode {
         return functions.getLast();
     }
 
+    public Function<String, String> removeLastFunc() {
+        return functions.removeLast();
+    }
+
     public void addFunction(String desc, Function<String, String> remapFunc) {
         descriptions.add(desc);
         functions.add(remapFunc);

@@ -54,7 +54,7 @@ public final class Telescope {
     private final List<String> options;
     private final Consumer<Line> consumer;
     private final TrieMapManager trieMapManager;
-        private final ExecutorService executorService;
+    private final ExecutorService executorService;
 
     /* --------------------------------------------------------------- *
      *  Optional customisation (builder defaults)                        *
@@ -163,7 +163,7 @@ public final class Telescope {
     private void registerDefaultKeyMaps() {
         trieMapManager.reMap(List.of(VimMode.COMMAND), "<esc>", "escape telescope",
                 is -> {
-                    revertTelescopeView(vimEng, currView, telescopeView);
+                    revertTelescopeView(vimEng, currView, telescopeView, trieMapManager);
                     return null;
                 }, true);
 
@@ -213,13 +213,13 @@ public final class Telescope {
                 Line lineResult = resultFuture.get(timeout, timeoutUnit);
                 if (lineResult != null) {
                     System.out.println("Telescope result: " + lineResult);
-                    revertTelescopeView(vimEng, currView, telescopeView);
+                    revertTelescopeView(vimEng, currView, telescopeView, trieMapManager);
                     consumer.accept(lineResult);
                 }
             } catch (Exception e) {
                 // Timeout, cancellation or any other problem – just log
                 e.printStackTrace();
-                revertTelescopeView(vimEng, currView, telescopeView);
+                revertTelescopeView(vimEng, currView, telescopeView, trieMapManager);
             }
         });
     }
@@ -319,11 +319,12 @@ public final class Telescope {
         return Collections.emptyList();
     }
 
-    private String revertTelescopeView(VimEng vimEng, View currView, View telescopeView) {
+    private String revertTelescopeView(VimEng vimEng, View currView, View telescopeView, TrieMapManager tm) {
         vimEng.setView(currView);
         telescopeView.removeListeners();
         resultFuture.cancel(true);
         telescopeView.reset();
+        tm.removeRemappings();
         System.out.println("reverted telescope view");
         return null;
     }

@@ -3,6 +3,7 @@ package com.dksd.dvim.complete;
 import com.dksd.dvim.buffer.Buf;
 import com.dksd.dvim.engine.VimEng;
 import com.dksd.dvim.event.EventType;
+import com.dksd.dvim.event.VimListener;
 import com.dksd.dvim.mapping.trie.TrieMapManager;
 import com.dksd.dvim.mapping.trie.TrieNode;
 import com.dksd.dvim.view.Line;
@@ -20,10 +21,11 @@ import static com.dksd.dvim.complete.Telescope.moveArrowInResults;
 public class TabCompletion {
 
     private static final long TIMEOUT = 1000;
-    private CompletableFuture<Line> resultFuture;
+    private final CompletableFuture<Line> resultFuture;
     private final ExecutorService executorService;
     private final TrieMapManager tabCompleteTrie = new TrieMapManager();
     public static final String ROW_INDICATOR = " -->";
+    private VimListener vimListener;
 
     public TabCompletion(ExecutorService executorService) {
         this.executorService = executorService;
@@ -39,6 +41,7 @@ public class TabCompletion {
         Buf tabBuf = vimEng.getView().getBufferByName(View.TAB_BUFFER);
         tabBuf.setLinesStr(options);
         moveArrowInResults(tabBuf, 0, ROW_INDICATOR);
+
         TrieMapManager tm = vimEng.getKeyMaps().getTrieManager();
         tm.reMap(List.of(VimMode.INSERT, VimMode.COMMAND),
                 "<up>",
@@ -63,11 +66,10 @@ public class TabCompletion {
                 }, true);
         tm.reMap(List.of(VimMode.INSERT, VimMode.COMMAND), "<esc>", "accept selection",
                 is -> {
-                    vimEng.getView().setTabComplete(null);
-                    //TODO revert
+                    revertTabComplete(vimEng, tm);
                     return null;
                 }, true);
-        vimEng.getView().addListener(vimEvent -> {
+        vimListener = vimEng.getView().addListener(vimEvent -> {
             if (vimEvent.getBufNo() == activeBuf.getBufNo() && EventType.BUF_CHANGE.equals(vimEvent.getEventType())) {
                 String cont = vimEng.getView().getBuffer(activeBuf.getBufNo()).getLine(r).getWord(c);
                 List<TrieNode> foundNodes = new ArrayList<>();
@@ -89,7 +91,7 @@ public class TabCompletion {
             try {
                 Line lineResult = resultFuture.get(TIMEOUT, TimeUnit.SECONDS);
                 if (lineResult != null) {
-                    System.out.println("Telescope result: " + lineResult);
+                    System.out.println("Tab complete result: " + lineResult);
                     Line orig = activeBuf.getLine(original.getLineNumber());
                     merge(activeBuf, orig, col, lineResult);
                     //consumer.accept(lineResult);
@@ -97,9 +99,15 @@ public class TabCompletion {
             } catch (Exception e) {
                 // Timeout, cancellation or any other problem – just log
                 e.printStackTrace();
-                //revertTelescopeView(vimEng, currView, telescopeView);
             }
         });
+    }
+
+    private void revertTabComplete(VimEng vimEng, TrieMapManager tm) {
+        vimEng.getView().setTabComplete(null);
+        vimEng.getView().removeListener(vimListener);
+        resultFuture.cancel(true);
+        tm.removeRemappings();
     }
 
     private void merge(Buf buf, Line orig, int col, Line lineResult) {
