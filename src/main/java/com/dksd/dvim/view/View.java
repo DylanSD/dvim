@@ -100,7 +100,7 @@ public class View {
                 MAIN_BUFFER,
                 MAIN_BUFFER + ".txt",
                 100,
-                65,
+                60,
                 true,
                 BufferMode.RELATIVE_HEIGHT,
                 BufferMode.LEFT_BORDER,
@@ -131,10 +131,11 @@ public class View {
                 SIDE_BUFFER,
                 SIDE_BUFFER + ".txt",
                 100,
-                35,
+                40,
                 true,
                 BufferMode.RELATIVE_HEIGHT,
                 BufferMode.NO_LINE_NUMBERS,
+                BufferMode.NO_GUTTER,
                 BufferMode.LEFT_BORDER,
                 BufferMode.TOP_BORDER);
         sideBufNo = sideBuf.getBufNo();

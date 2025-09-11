@@ -33,6 +33,7 @@ public class ChatModel {
     }
 
     public void chat(String prompt, Buf destBuf) {
+        destBuf.addRow("Sending LLM request to model: " + MODEL);
         chatModel.chat(prompt, new StreamingChatResponseHandler() {
 
             @Override
@@ -47,12 +48,11 @@ public class ChatModel {
 
             @Override
             public void onCompleteResponse(ChatResponse completeResponse) {
+                destBuf.addRow("====Completed response=========");
                 String[] ls = completeResponse.aiMessage().text().split("\n");
-                List<Line> dLines = new ArrayList<>(ls.length);
                 for (int i = 0; i < ls.length; i++) {
-                    dLines.add(new Line(i, ls[i], null));
+                    destBuf.addRow(ls[i]);
                 }
-                destBuf.setLines(dLines);
                 //int inTokens = completeResponse.tokenUsage().inputTokenCount();
                 //int outTokens = completeResponse.tokenUsage().outputTokenCount();
                 //long storageUsed = completeResponse.aiMessage().toString().length();

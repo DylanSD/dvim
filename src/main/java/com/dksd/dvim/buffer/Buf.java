@@ -319,7 +319,7 @@ public class Buf {
     }
 
     public int getGutterSize() {
-        return GUTTER_SIZE;
+        return (bufferModes.contains(BufferMode.NO_GUTTER)) ? 0 : GUTTER_SIZE;
     }
 
     public int getBufNo() {
@@ -373,7 +373,7 @@ public class Buf {
         List<DispObj> dispObjs = new ArrayList<>();
         int leftBorderWidth = getBorderWidths(BufferMode.LEFT_BORDER);
         int topBorderWidth = getBorderWidths(BufferMode.TOP_BORDER);
-        int width = getScrollView().getWidth() - 5 - leftBorderWidth;
+        int width = getScrollView().getWidth() - getGutterSize() - leftBorderWidth;
         int height = getScrollView().getHeight();
         if (height > 1) height -= topBorderWidth;
 
@@ -410,7 +410,7 @@ public class Buf {
     }
 
     private int getOnScreenCol(int colDataIndex, int leftBorderWidth) {
-        return colDataIndex + scrollView.getColStart() + 5 + leftBorderWidth;
+        return colDataIndex + scrollView.getColStart() + getGutterSize() + leftBorderWidth;
     }
 
     private int getOnScreenRow(int rowDataIndex, int topBorderWidth) {
@@ -419,7 +419,7 @@ public class Buf {
 
     public DispObj getDisplayCursor() {
         int pRow = getRow() - getVirtualRow(getRow(), getScrollView().getHeight()) + scrollView.getRowStart() + 1;
-        int pCol = getCol() - getVirtualCol(getRow(), getCol(), getScrollView().getWidth()) + scrollView.getColStart() + 5 + 1;
+        int pCol = getCol() - getVirtualCol(getRow(), getCol(), getScrollView().getWidth()) + scrollView.getColStart() + getGutterSize() + 1;
 
         pCol = Math.min(pCol, getScrollView().getWidth() + scrollView.getColStart() - 1);
         pRow = Math.min(pRow, getScrollView().getHeight() + scrollView.getRowStart() - 1);
@@ -448,7 +448,7 @@ public class Buf {
 
     public void calcPopoverScrollView(int row, int screenWidth, int screenHeight) {
         int newWidth = scrollView.getPercentOfScreenWidth() * screenWidth / 100;
-        scrollView.setRowStart(row + 5);
+        scrollView.setRowStart(row + getGutterSize());
         scrollView.setRowEnd(screenHeight - 1);
         scrollView.setColStart((screenWidth / 2) - (newWidth / 2));
         scrollView.setColEnd((screenWidth / 2) + (newWidth / 2));

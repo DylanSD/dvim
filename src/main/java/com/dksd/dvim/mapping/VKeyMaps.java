@@ -126,6 +126,10 @@ public class VKeyMaps {
                 "<down>");
         tm.addStrokeMapping(new KeyStroke(KeyType.ArrowDown, false, true, false),
                 "<a-down>");
+        tm.addStrokeMapping(new KeyStroke(KeyType.PageDown, false, false, false),
+                "<page-down>");
+        tm.addStrokeMapping(new KeyStroke(KeyType.PageUp, false, false, false),
+                "<page-up>");
 
         createSimpleCharMappings();
 
@@ -210,6 +214,16 @@ public class VKeyMaps {
         tm.putKeyMap(List.of(VimMode.COMMAND, VimMode.INSERT), "<end>", "desc", s -> {
             Line line = vimEng.getCurrentLine();
             vimEng.moveCursor(0, line.length());
+            return null;//no mapping
+        }, true);
+        tm.putKeyMap(List.of(VimMode.COMMAND, VimMode.INSERT), "<page-up>", "desc", s -> {
+            int delta = Math.min(vimEng.getRow(), vimEng.getActiveBuf().getScrollView().getHeight());
+            vimEng.moveCursor(-delta, 0);
+            return null;//no mapping
+        }, true);
+        tm.putKeyMap(List.of(VimMode.COMMAND, VimMode.INSERT), "<page-down>", "desc", s -> {
+            int delta = Math.min(vimEng.getActiveBuf().size() - 1 - vimEng.getRow(), vimEng.getActiveBuf().getScrollView().getHeight());
+            vimEng.moveCursor(delta, 0);
             return null;//no mapping
         }, true);
         tm.putKeyMap(VimMode.COMMAND, "x", "desc", s -> {
