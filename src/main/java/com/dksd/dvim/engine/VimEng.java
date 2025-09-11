@@ -162,9 +162,6 @@ public class VimEng {
         getView().getBuffer(getView().getActiveBufNo()).replaceLine(row, replaceStr);
     }
 
-    public void setActiveBuffer(int bufNo) {
-        getView().setActiveBufNo(bufNo);
-    }
     private Buf getBuffer(int bufNo) {
         return getView().getBuffer(bufNo);
     }

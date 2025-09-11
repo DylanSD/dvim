@@ -388,10 +388,10 @@ public class Buf {
             String croppedLine = "";
             try {
                 croppedLine = str.substring(stCol, Math.min(str.length(), stCol + width));
-
             }
             catch (Exception ep) {
-                ep.printStackTrace();
+                //ep.printStackTrace();
+                //System.out.println("str to try crop: " + str);
             }
             dispObjs.add(
                     new DispObj(getOnScreenRow(rowDataIndex - stRow, topBorderWidth),

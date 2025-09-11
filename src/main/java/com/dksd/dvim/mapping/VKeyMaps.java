@@ -25,6 +25,9 @@ import com.googlecode.lanterna.input.KeyType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static com.dksd.dvim.view.View.MAIN_BUFFER;
+import static com.dksd.dvim.view.View.SIDE_BUFFER;
+
 
 public class VKeyMaps {
 
@@ -200,9 +203,8 @@ public class VKeyMaps {
             return null;//no mapping
         }, true);
         tm.putKeyMap(List.of(VimMode.COMMAND, VimMode.INSERT), "<home>", "desc", s -> {
-            Line line = vimEng.getCurrentLine();
-            int stripped = line.getContent().stripLeading().length();
-            vimEng.moveCursor(line.length() - stripped, 0);
+            //Line line = vimEng.getCurrentLine();
+            vimEng.moveCursor(0, -vimEng.getCol());
             return null;//no mapping
         }, true);
         tm.putKeyMap(List.of(VimMode.COMMAND, VimMode.INSERT), "<end>", "desc", s -> {
@@ -304,11 +306,15 @@ public class VKeyMaps {
             return null;
         });
         tm.putKeyMap(VimMode.COMMAND, "<c-w><right>", "expand active buffer to the right", s -> {
-            //vimEng.getView().expandScrollView(0,0,0,1);
+            if (vimEng.getView().getActiveBuf().getName().equals(MAIN_BUFFER)) {
+                vimEng.getView().setActiveBufByName(View.SIDE_BUFFER);
+            }
             return null;
         });
         tm.putKeyMap(VimMode.COMMAND, "<c-w><left>", "expand active buffer to the right", s -> {
-            //vimEng.getView().expandScrollView(0,0,-1,0);
+            if (vimEng.getView().getActiveBuf().getName().equals(SIDE_BUFFER)) {
+                vimEng.getView().setActiveBufByName(MAIN_BUFFER);
+            }
             return null;
         });
         tm.putKeyMap(VimMode.COMMAND, "<c-w><up>", "expand active buffer to the right", s -> {

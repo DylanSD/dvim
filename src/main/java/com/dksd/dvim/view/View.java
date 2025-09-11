@@ -172,7 +172,7 @@ public class View {
                 BufferMode.POS_BELOW_CURSOR);
 */
 
-        setActiveBufNo(mainBuf.getBufNo());
+        setActiveBuf(mainBuf.getBufNo());
         executor.execute(() -> {
             while (true) {
                 try {
@@ -208,9 +208,7 @@ public class View {
         return activeBufNo.get();
     }
 
-    public void setActiveBufNo(int activeBufNo) {
-        this.activeBufNo.set(activeBufNo);
-    }
+
 
     public Buf getBuffer(Integer bufNo) {
         return buffers.get(bufNo);
@@ -450,10 +448,6 @@ public class View {
         return Objects.hash(name, buffers, events, eventListeners, activeBufNo, statusBufNo, headerBufNo, mainBufNo, sideBufNo, tabBufNo, tabComplete);
     }
 
-    public void setActiveBuf(int bufNo) {
-        setActiveBufNo(bufNo);
-    }
-
     public BlockingQueue<VimEvent> getEvents() {
         return events;
     }
@@ -507,5 +501,13 @@ public class View {
 
     public void removeListener(VimListener vimListener) {
         eventListeners.remove(vimListener);
+    }
+
+    public void setActiveBuf(int bufNo) {
+        activeBufNo.set(bufNo);
+    }
+
+    public void setActiveBufByName(String bufName) {
+        activeBufNo.set(getBufNoByName(bufName));
     }
 }
