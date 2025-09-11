@@ -12,10 +12,12 @@ import java.util.stream.Stream;
 import com.dksd.dvim.buffer.Buf;
 import com.dksd.dvim.engine.VimEng;
 import com.dksd.dvim.history.Harpoons;
+import com.dksd.dvim.model.ChatModel;
 import com.dksd.dvim.utils.ScriptBuilder;
 import com.dksd.dvim.mapping.trie.TrieMapManager;
 import com.dksd.dvim.complete.TabCompletion;
 import com.dksd.dvim.complete.Telescope;
+import com.dksd.dvim.view.View;
 import com.dksd.dvim.view.VimMode;
 import com.dksd.dvim.view.Line;
 import com.googlecode.lanterna.input.KeyStroke;
@@ -34,6 +36,7 @@ public class VKeyMaps {
     private final ScriptBuilder sb = new ScriptBuilder();
     private final Harpoons harpoons = new Harpoons();
     private Telescope telescope;
+    private ChatModel chatModel = new ChatModel();
 
     public VKeyMaps(VimEng ve, TrieMapManager tm) {
         this.vimEng = ve;
@@ -62,7 +65,7 @@ public class VKeyMaps {
             tm.addStrokeMapping(
                     new KeyStroke(Character.toUpperCase((char) i), false, true, true),
                     "<a-" + chr.toUpperCase() + ">");
-            tm.putKeyMap(List.of(VimMode.INSERT, VimMode.SEARCH, VimMode.FUZZY_FIND), "<s-" + chr.toUpperCase() + ">", "Shift key mapping",
+            tm.putKeyMap(List.of(VimMode.INSERT, VimMode.SEARCH), "<s-" + chr.toUpperCase() + ">", "Shift key mapping",
                     s -> {
                         vimEng.getActiveBuf().insertIntoLine(chr.toUpperCase());
                         return null;//no mapping
@@ -174,6 +177,12 @@ public class VKeyMaps {
         }, true);
         tm.putKeyMap(List.of(VimMode.INSERT, VimMode.COMMAND), "<tab>", "tab completion or insert spaces", s -> {
             TabCompletion tabCompletion = new TabCompletion(vimEng.getThreadPool());
+            //create a context and ask the llm.
+            //pri, code, files, classes
+            //TODO Actually need a larger history since too many funcs
+            //TODO what was the previous function description?
+            //Can then load the correct context for options..
+            //So I can have context
             Buf activeBuf = vimEng.getActiveBuf();
             tabCompletion.handleTabComplete(
                     List.of("optione one", "two", "three"),
@@ -182,6 +191,12 @@ public class VKeyMaps {
                         //TODO can move back a word
                         activeBuf.insertIntoLine(lineResult.getContent());//brutal
                     });
+            return null;//no mapping
+        }, true);
+        tm.putKeyMap(List.of(VimMode.COMMAND, VimMode.INSERT), "<c-p>", "call llm", s -> {
+            chatModel.chat("Can you review the text that follows and offer suggestions?: " +
+                    vimEng.getActiveBuf().getLinesAsStr(),
+                    vimEng.getView().getBufferByName(View.SIDE_BUFFER));
             return null;//no mapping
         }, true);
         tm.putKeyMap(List.of(VimMode.COMMAND, VimMode.INSERT), "<home>", "desc", s -> {
@@ -240,7 +255,7 @@ public class VKeyMaps {
         });
         tm.putKeyMap(VimMode.COMMAND, ".", "redo the last action", s -> {
             //vimEng.setVimMode(VimMode.INSERT);
-            tm.getPrevFunctionRun().apply(vimEng.getCurrentLine().getContent());
+            tm.getPrevFunctionRuns().getFirst().getLastFunc().apply(vimEng.getCurrentLine().getContent());
             return null;//no mapping
         });
         tm.putKeyMap(VimMode.COMMAND, "i", "desc", s -> {
@@ -248,7 +263,7 @@ public class VKeyMaps {
             System.out.println("Pressed i to go into insert mode");
             return null;//no mapping
         });
-        tm.putKeyMap(List.of(VimMode.COMMAND, VimMode.INSERT, VimMode.SEARCH, VimMode.FUZZY_FIND),
+        tm.putKeyMap(List.of(VimMode.COMMAND, VimMode.INSERT, VimMode.SEARCH),
                 List.of("<esc>"), "escape from any mode to command mode", s -> {
                     vimEng.setVimMode(VimMode.COMMAND);
                     vimEng.clearKeys();
@@ -259,12 +274,12 @@ public class VKeyMaps {
                     System.out.println("Pressed Esc to go into command mode");
                     return null;//no mapping
                 });
-        tm.putKeyMap(List.of(VimMode.INSERT, VimMode.SEARCH, VimMode.FUZZY_FIND), "<C-[>", "desc", s -> {
+        tm.putKeyMap(List.of(VimMode.INSERT, VimMode.SEARCH), "<C-[>", "desc", s -> {
             vimEng.setVimMode(VimMode.COMMAND);
             System.out.println("Pressed <C-[> to go into command mode");
             return null;//no mapping
         });
-        tm.putKeyMap(List.of(VimMode.INSERT, VimMode.SEARCH, VimMode.FUZZY_FIND), "<bs>", "desc", s -> {
+        tm.putKeyMap(List.of(VimMode.INSERT, VimMode.SEARCH), "<bs>", "desc", s -> {
             vimEng.moveCursor(0, -1);
             vimEng.deleteInLine(1);
             vimEng.removeLastKeyStroke();
@@ -449,7 +464,7 @@ public class VKeyMaps {
             //telescope(varNames, line -> varNames);  //want to copy to clipboard?
             return null;//no mapping
         });
-        tm.putKeyMap(List.of(VimMode.INSERT, VimMode.FUZZY_FIND), "<leader>", "desc", s -> {
+        tm.putKeyMap(List.of(VimMode.INSERT), "<leader>", "desc", s -> {
             vimEng.writeBuf(" ");
             System.out.println("Typed a space!");
             return null;//no mapping
@@ -542,7 +557,7 @@ public class VKeyMaps {
     private void createSimpleCharMappings() {
         for (int i = 32; i < 127; i++) {
             final String chr = "" + (char) i;
-            tm.putKeyMap(List.of(VimMode.INSERT, VimMode.SEARCH, VimMode.FUZZY_FIND), chr, "simple key mapping",
+            tm.putKeyMap(List.of(VimMode.INSERT, VimMode.SEARCH), chr, "simple key mapping",
                     s -> {
                         vimEng.getActiveBuf().insertIntoLine(chr);
                         return null;//no mapping

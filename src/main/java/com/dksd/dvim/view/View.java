@@ -442,12 +442,12 @@ public class View {
             return false;
         }
         View view = (View) o;
-        return activeBufNo == view.activeBufNo && statusBufNo == view.statusBufNo && headerBufNo == view.headerBufNo && Objects.equals(logger, view.logger) && Objects.equals(name, view.name) && Objects.equals(buffers, view.buffers) && Objects.equals(events, view.events) && Objects.equals(eventListeners, view.eventListeners) && Objects.equals(executor, view.executor);
+        return statusBufNo == view.statusBufNo && headerBufNo == view.headerBufNo && mainBufNo == view.mainBufNo && sideBufNo == view.sideBufNo && tabBufNo == view.tabBufNo && Objects.equals(name, view.name) && Objects.equals(buffers, view.buffers) && Objects.equals(events, view.events) && Objects.equals(eventListeners, view.eventListeners) && Objects.equals(activeBufNo, view.activeBufNo) && Objects.equals(tabComplete, view.tabComplete);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(logger, name, buffers, events, eventListeners, activeBufNo, statusBufNo, headerBufNo, executor);
+        return Objects.hash(name, buffers, events, eventListeners, activeBufNo, statusBufNo, headerBufNo, mainBufNo, sideBufNo, tabBufNo, tabComplete);
     }
 
     public void setActiveBuf(int bufNo) {

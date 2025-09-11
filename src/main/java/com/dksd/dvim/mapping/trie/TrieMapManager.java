@@ -15,8 +15,8 @@ public class TrieMapManager {
 
     private final Map<KeyStroke, String> keyStrokeToStringMapping = new ConcurrentHashMap<>();
     private final Map<VimMode, Trie> mappings = new ConcurrentHashMap<>();
-    private Function<String, String> prevFunctionRun = null;
     private Set<TrieNode> remappedNodes = new HashSet<>();
+    private List<TrieNode> prevExecFunctionNodes = new ArrayList<>();
 
     public void mapRecursively(List<TrieNode> nodes, int depth, VimMode vimMode, String keyStrokes) {
         if (keyStrokes == null || depth > 10) {
@@ -30,7 +30,7 @@ public class TrieMapManager {
         if (foundNode.isWord()) {
             String funcResult = foundNode.getLastFunc().apply(keyStrokes);
             if (!".".equals(keyStrokes)) {
-                prevFunctionRun = foundNode.getLastFunc();
+                prevExecFunctionNodes.addFirst(foundNode);
             }
             mapRecursively(nodes, depth + 1, vimMode, funcResult);
         }
@@ -127,8 +127,8 @@ public class TrieMapManager {
         return retNodes;
     }
 
-    public Function<String, String> getPrevFunctionRun() {
-        return prevFunctionRun;
+    public List<TrieNode> getPrevFunctionRuns() {
+        return prevExecFunctionNodes;
     }
 
     public String toVim(List<KeyStroke> keyStrokes) {

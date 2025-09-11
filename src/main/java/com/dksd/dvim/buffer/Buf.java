@@ -270,26 +270,16 @@ public class Buf {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
         Buf buf = (Buf) o;
-        return row.get() == buf.row.get() && col.get() == buf.col.get() &&
-                Objects.equals(logger, buf.logger) && Objects.equals(name, buf.name) &&
-                Objects.equals(scrollView, buf.scrollView) &&
-                Objects.equals(lines, buf.lines) &&
-                Objects.equals(bufferModes, buf.bufferModes) &&
-                Objects.equals(filename, buf.filename);
+        return bufNo == buf.bufNo && Objects.equals(name, buf.name) && Objects.equals(filename, buf.filename) && Objects.equals(scrollView, buf.scrollView) && Objects.equals(lines, buf.lines) && Objects.equals(row, buf.row) && Objects.equals(col, buf.col) && Objects.equals(bufferModes, buf.bufferModes) && Objects.equals(eventQueue, buf.eventQueue);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(logger, name, scrollView, lines, row, col,
-                bufferModes,
-                filename);
+        return Objects.hash(name, filename, bufNo, scrollView, lines, row, col, bufferModes, eventQueue);
     }
 
     public void appendToLine(String str) {
@@ -391,10 +381,18 @@ public class Buf {
         int stCol = getVirtualCol(getRow(), getCol(), width);
 
         for (int rowDataIndex = stRow; rowDataIndex < stRow + height && rowDataIndex < lines.size(); rowDataIndex++) {
+
             Line lineStr = lines.getCurrBuf(rowDataIndex);
             String str = lineStr.getContent();
-            String croppedLine = str.substring(stCol, Math.min(str.length(), stCol + width));
 
+            String croppedLine = "";
+            try {
+                croppedLine = str.substring(stCol, Math.min(str.length(), stCol + width));
+
+            }
+            catch (Exception ep) {
+                ep.printStackTrace();
+            }
             dispObjs.add(
                     new DispObj(getOnScreenRow(rowDataIndex - stRow, topBorderWidth),
                             getOnScreenCol(0, leftBorderWidth),
@@ -454,5 +452,9 @@ public class Buf {
         scrollView.setRowEnd(screenHeight - 1);
         scrollView.setColStart((screenWidth / 2) - (newWidth / 2));
         scrollView.setColEnd((screenWidth / 2) + (newWidth / 2));
+    }
+
+    public String getLinesAsStr() {
+        return lines.getLinesAsStr();
     }
 }

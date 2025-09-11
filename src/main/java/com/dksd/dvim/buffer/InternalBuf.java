@@ -5,7 +5,9 @@ import com.dksd.dvim.view.Line;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Stack;
+import java.util.stream.Collectors;
 
 public class InternalBuf {
 
@@ -96,5 +98,33 @@ public class InternalBuf {
     public void reset() {
         undoStack.clear();
         getCurrBuf();
+    }
+
+    public String getLinesAsStr() {
+        return getCurrBuf().stream()
+                .map(Line::getContent)
+                .collect(Collectors.joining("\n"));
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        InternalBuf that = (InternalBuf) o;
+        return keepUndo == that.keepUndo && Objects.equals(undoStack, that.undoStack);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(keepUndo, undoStack);
+    }
+
+    @Override
+    public String toString() {
+        return "InternalBuf{" +
+                "keepUndo=" + keepUndo +
+                ", undoStack=" + undoStack +
+                '}';
     }
 }
