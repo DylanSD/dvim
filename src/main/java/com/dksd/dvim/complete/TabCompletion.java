@@ -23,6 +23,7 @@ public class TabCompletion {
     private CompletableFuture<Line> resultFuture;
     private final ExecutorService executorService;
     private final TrieMapManager tabCompleteTrie = new TrieMapManager();
+    public static final String ROW_INDICATOR = " -->";
 
     public TabCompletion(ExecutorService executorService) {
         this.executorService = executorService;
@@ -37,12 +38,13 @@ public class TabCompletion {
         //Also call function, move to tab complete logic
         Buf tabBuf = vimEng.getView().getBufferByName(View.TAB_BUFFER);
         tabBuf.setLinesStr(options);
+        moveArrowInResults(tabBuf, 0, ROW_INDICATOR);
         TrieMapManager tm = vimEng.getKeyMaps().getTrieManager();
         tm.reMap(List.of(VimMode.INSERT, VimMode.COMMAND),
                 "<up>",
                 "move selection up",
                 is -> {
-                    moveArrowInResults(tabBuf, -1);
+                    moveArrowInResults(tabBuf, -1, ROW_INDICATOR);
                     return null;
                 },
                 true);
@@ -50,7 +52,7 @@ public class TabCompletion {
         // <Down> – move selection down
         tm.reMap(List.of(VimMode.INSERT, VimMode.COMMAND), "<down>", "move selection down",
                 is -> {
-                    moveArrowInResults(tabBuf, 1);
+                    moveArrowInResults(tabBuf, 1, ROW_INDICATOR);
                     return null;
                 }, true);
         tm.reMap(List.of(VimMode.INSERT, VimMode.COMMAND), "<enter>", "accept selection",

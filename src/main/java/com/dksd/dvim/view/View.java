@@ -34,6 +34,8 @@ import com.googlecode.lanterna.screen.TerminalScreen;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static com.dksd.dvim.complete.Telescope.moveArrowInResults;
+
 public class View {
 
     private Logger logger = LoggerFactory.getLogger(View.class);
@@ -239,7 +241,6 @@ public class View {
                 textGraphics.fillRectangle(new TerminalPosition(tabBuf.getScrollView().getColStart(), tabBuf.getScrollView().getRowStart()),
                         new TerminalSize(tabBuf.getScrollView().getHeight(), tabBuf.getScrollView().getWidth()), ' ');
 
-                //TODO draw background so not confusing.
                 drawBuffer(screen, textGraphics, tabBuf, futures);
             }
 
@@ -331,6 +332,7 @@ public class View {
 
     private Line genGutter(Buf buf,
                            Line line) {
+
         StringBuilder gutter = new StringBuilder();
         if (line.getIndicatorStr() != null) {
             gutter.append(line.getIndicatorStr());

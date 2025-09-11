@@ -46,6 +46,7 @@ import java.util.function.Consumer;
  */
 public final class Telescope {
 
+    public static final String ROW_INDICATOR = ">";
     /* --------------------------------------------------------------- *
      *  Required state (set by the builder)                             *
      * --------------------------------------------------------------- */
@@ -141,7 +142,7 @@ public final class Telescope {
 
         // 3️⃣  Initialise UI state (arrow on first line, focus input)
         telescopeView.setActiveBuf(inputBufNo);
-        moveArrowInResults(resultsBuf, 0);
+        moveArrowInResults(resultsBuf, 0, ROW_INDICATOR);
     }
 
     /* --------------------------------------------------------------- *
@@ -171,7 +172,7 @@ public final class Telescope {
                 "<up>",
                 "move selection up",
                 is -> {
-                    moveArrowInResults(resultsBuf, -1);
+                    moveArrowInResults(resultsBuf, -1, ROW_INDICATOR);
                     return null;
                 },
                 true);
@@ -179,7 +180,7 @@ public final class Telescope {
         // <Down> – move selection down
         trieMapManager.reMap(List.of(VimMode.INSERT, VimMode.COMMAND), "<down>", "move selection down",
                 is -> {
-                    moveArrowInResults(resultsBuf, 1);
+                    moveArrowInResults(resultsBuf, 1, ROW_INDICATOR);
                     return null;
                 }, true);
 
@@ -287,12 +288,13 @@ public final class Telescope {
     }
 
     public static void moveArrowInResults(Buf resultsBuf,
-                                    int rowDelta) {
+                                          int rowDelta,
+                                          String rowIndicator) {
         if (resultsBuf.getCurrentLine() != null) {
             resultsBuf.getCurrentLine().setIndicatorStr(null);
             System.out.println(resultsBuf.getCurrentLine());
             resultsBuf.addToRow(rowDelta);
-            resultsBuf.getCurrentLine().setIndicatorStr(">");
+            resultsBuf.getCurrentLine().setIndicatorStr(rowIndicator);
             System.out.println(resultsBuf.getCurrentLine());
         }
     }
@@ -311,7 +313,7 @@ public final class Telescope {
                 keptLinesForBuf.add(Line.of(keptLine.getItemIndex(), keptLine.getText(), null));
             }
             results.setLines(keptLinesForBuf);
-            moveArrowInResults(resultsBuf, 0);
+            moveArrowInResults(resultsBuf, 0, ROW_INDICATOR);
             return keptLines;
         }
         return Collections.emptyList();
