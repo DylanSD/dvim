@@ -1,4 +1,4 @@
-package com.dksd.dvim.key;
+package com.dksd.dvim.utils;
 
 import org.buildobjects.process.ProcBuilder;
 

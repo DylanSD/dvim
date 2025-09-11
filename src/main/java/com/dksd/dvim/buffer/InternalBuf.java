@@ -86,8 +86,8 @@ public class InternalBuf {
     public List<Line> pushAndGet() {
         if (this.keepUndo) {
             undoStack.push(Collections.synchronizedList(new ArrayList<>(undoStack.peek())));
-            if (undoStack.size() >= MAX_UNDO_LEVEL) {
-                undoStack.remove(MAX_UNDO_LEVEL - 1);
+            if (undoStack.size() > MAX_UNDO_LEVEL) {
+                undoStack.remove(0); // drop the oldest snapshot
             }
         }
         return getCurrBuf();

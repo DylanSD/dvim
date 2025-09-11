@@ -11,7 +11,7 @@ import java.util.stream.Stream;
 
 import com.dksd.dvim.engine.VimEng;
 import com.dksd.dvim.history.Harpoons;
-import com.dksd.dvim.key.ScriptBuilder;
+import com.dksd.dvim.utils.ScriptBuilder;
 import com.dksd.dvim.mapping.trie.TrieMapManager;
 import com.dksd.dvim.complete.TabCompletion;
 import com.dksd.dvim.complete.Telescope;
@@ -281,19 +281,19 @@ public class VKeyMaps {
             return null;
         });
         tm.putKeyMap(VimMode.COMMAND, "<c-w><right>", "expand active buffer to the right", s -> {
-            vimEng.getView().expandScrollView(0,0,0,1);
+            //vimEng.getView().expandScrollView(0,0,0,1);
             return null;
         });
         tm.putKeyMap(VimMode.COMMAND, "<c-w><left>", "expand active buffer to the right", s -> {
-            vimEng.getView().expandScrollView(0,0,-1,0);
+            //vimEng.getView().expandScrollView(0,0,-1,0);
             return null;
         });
         tm.putKeyMap(VimMode.COMMAND, "<c-w><up>", "expand active buffer to the right", s -> {
-            vimEng.getView().expandScrollView(-1,0,0,0);
+            //vimEng.getView().expandScrollView(-1,0,0,0);
             return null;
         });
         tm.putKeyMap(VimMode.COMMAND, "<c-w><down>", "expand active buffer to the right", s -> {
-            vimEng.getView().expandScrollView(0,1,0,0);
+            //vimEng.getView().expandScrollView(0,1,0,0);
             return null;
         });
         tm.putKeyMap(VimMode.COMMAND, ":", "open command window", s -> {

@@ -319,9 +319,9 @@ public class View {
     }
 
     private void drawString(TextGraphics tg, Line line, int colOffset, int rowOffset, LinkedBlockingQueue<Future<?>> futures) {
-        //syntaxHighlighter.drawHighlightedCode(tg, line.getContent(), rowOffset, colOffset, futures);
+        syntaxHighlighter.drawHighlightedCode(tg, line.getContent(), rowOffset, colOffset, futures);
 //xxx
-        tg.putString(colOffset, rowOffset, line.getContent());
+        //tg.putString(colOffset, rowOffset, line.getContent());
     }
 
     private void generateColors(TextGraphics textGraphics, Buf buf) {
@@ -496,10 +496,6 @@ public class View {
         buffers.get(sideBufNo).getScrollView().setColEnd(screenWidth);
         buffers.get(headerBufNo).getScrollView().setColEnd(screenWidth);
         buffers.get(statusBufNo).getScrollView().setColEnd(screenWidth);
-    }
-
-    public void expandScrollView(int topD, int botD, int leftD, int rightD) {
-        getActiveBuf().getScrollView().expandScrollView(getActiveBuf(), topD, botD, leftD, rightD);
     }
 
     public void setTabComplete(Line cLine) {

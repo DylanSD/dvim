@@ -32,6 +32,11 @@ dependencies {
     implementation 'de.gesundkrank.fzf4j:fzf4j:0.2.0'
     implementation 'org.buildobjects:jproc:2.8.2'
 
+// https://mvnrepository.com/artifact/io.github.tree-sitter/jtreesitter
+    //implementation("io.github.tree-sitter:jtreesitter:0.25.4")
+
+    //implementation 'ch.usi.si.seart:java-tree-sitter:1.12.0'
+
     testImplementation platform('org.junit:junit-bom:5.9.1')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     // https://mvnrepository.com/artifact/org.mockito/mockito-core

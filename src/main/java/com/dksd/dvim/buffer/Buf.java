@@ -15,6 +15,8 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import com.dksd.dvim.view.DispObj;
 import com.dksd.dvim.event.EventType;
@@ -251,11 +253,9 @@ public class Buf {
     }
 
     public void setLinesStr(List<String> lines) {
-        List<Line> l = new ArrayList<>();
-        for (int i = 0; i < lines.size(); i++) {
-            l.add(new Line(i, lines.get(i), null));
-        }
-        setLines(l);
+        setLines(IntStream.range(0, lines.size())
+                .mapToObj(i -> new Line(i, lines.get(i), null))
+                .collect(Collectors.toList()));
     }
 
     public void setLines(List<Line> keptLines) {
@@ -420,15 +420,11 @@ public class Buf {
     }
 
     public DispObj getDisplayCursor() {
+        int pRow = getRow() - getVirtualRow(getRow(), getScrollView().getHeight()) + scrollView.getRowStart() + 1;
+        int pCol = getCol() - getVirtualCol(getRow(), getCol(), getScrollView().getWidth()) + scrollView.getColStart() + 5 + 1;
 
-        int width = getScrollView().getWidth();
-        int height = getScrollView().getHeight();
-
-        int pRow = getRow() - getVirtualRow(getRow(), height) + scrollView.getRowStart() + 1;
-        int pCol = getCol() - getVirtualCol(getRow(), getCol(), width) + scrollView.getColStart() + 5 + 1;
-
-        pCol = Math.min(pCol, width + scrollView.getColStart() - 1);
-        pRow = Math.min(pRow, height + scrollView.getRowStart() - 1);
+        pCol = Math.min(pCol, getScrollView().getWidth() + scrollView.getColStart() - 1);
+        pRow = Math.min(pRow, getScrollView().getHeight() + scrollView.getRowStart() - 1);
 
         return new DispObj(pRow, pCol, new Line(0, "", null));
     }
