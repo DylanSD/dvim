@@ -9,6 +9,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
+import com.dksd.dvim.buffer.Buf;
 import com.dksd.dvim.engine.VimEng;
 import com.dksd.dvim.history.Harpoons;
 import com.dksd.dvim.utils.ScriptBuilder;
@@ -173,7 +174,14 @@ public class VKeyMaps {
         }, true);
         tm.putKeyMap(List.of(VimMode.INSERT, VimMode.COMMAND), "<tab>", "tab completion or insert spaces", s -> {
             TabCompletion tabCompletion = new TabCompletion(vimEng.getThreadPool());
-            tabCompletion.handleTabComplete(List.of("optione one", "two", "three"), vimEng);
+            Buf activeBuf = vimEng.getActiveBuf();
+            tabCompletion.handleTabComplete(
+                    List.of("optione one", "two", "three"),
+                    vimEng,
+                    lineResult -> {
+                        //TODO can move back a word
+                        activeBuf.insertIntoLine(lineResult.getContent());//brutal
+                    });
             return null;//no mapping
         }, true);
         tm.putKeyMap(List.of(VimMode.COMMAND, VimMode.INSERT), "<home>", "desc", s -> {

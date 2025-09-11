@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import static com.dksd.dvim.complete.Telescope.moveArrowInResults;
 
@@ -26,13 +27,15 @@ public class TabCompletion {
     private final TrieMapManager tabCompleteTrie = new TrieMapManager();
     public static final String ROW_INDICATOR = " -->";
     private VimListener vimListener;
+    private Consumer<Line> consumer;
 
     public TabCompletion(ExecutorService executorService) {
         this.executorService = executorService;
         resultFuture = new CompletableFuture<>();
     }
 
-    public CompletableFuture<Line> handleTabComplete(List<String> options, VimEng vimEng) {
+    public CompletableFuture<Line> handleTabComplete(List<String> options, VimEng vimEng, Consumer<Line> consumer) {
+        this.consumer = consumer;
         int r = vimEng.getRow();
         int c = vimEng.getCol();
         Buf activeBuf = vimEng.getActiveBuf();
@@ -82,19 +85,17 @@ public class TabCompletion {
                 tabBuf.setLines(suggestedLines);
             }
         });
-        awaitResult(activeBuf, c, vimEng.getCurrentLine());
+        awaitResult();
         return resultFuture;
     }
 
-    private void awaitResult(Buf activeBuf, int col, Line original) {
+    private void awaitResult() {
         executorService.submit(() -> {
             try {
                 Line lineResult = resultFuture.get(TIMEOUT, TimeUnit.SECONDS);
                 if (lineResult != null) {
                     System.out.println("Tab complete result: " + lineResult);
-                    Line orig = activeBuf.getLine(original.getLineNumber());
-                    merge(activeBuf, orig, col, lineResult);
-                    //consumer.accept(lineResult);
+                    consumer.accept(lineResult);
                 }
             } catch (Exception e) {
                 // Timeout, cancellation or any other problem – just log
@@ -109,9 +110,4 @@ public class TabCompletion {
         resultFuture.cancel(true);
         tm.removeRemappings();
     }
-
-    private void merge(Buf buf, Line orig, int col, Line lineResult) {
-        buf.insertIntoLine(lineResult.getContent());//brutal
-    }
-
 }
