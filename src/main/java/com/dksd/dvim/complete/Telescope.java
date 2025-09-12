@@ -21,16 +21,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * Telescope – a tiny, self‑contained UI that shows a list of options,
  * lets the user filter them with fuzzy‑matching and pick one with <Enter>.
- *
- * The class is built with {@link Telescope.Builder}.  Only three arguments
- * are mandatory (the {@link VimEng} instance, the list of options and a
- * {@link Consumer} that receives the chosen {@link Line}).  Everything
- * else – timeout, matcher configuration, extra key‑maps, etc. – can be
- * customised through the builder.
  *
  * Example usage:
  *
@@ -44,29 +39,31 @@ import java.util.function.Consumer;
  *
  *   telescope.start();   // opens the UI and blocks until a line is chosen
  */
-public final class Telescope {
+public final class Telescope<T, R> {
 
     public static final String ROW_INDICATOR = ">";
     /* --------------------------------------------------------------- *
      *  Required state (set by the builder)                             *
      * --------------------------------------------------------------- */
     private final VimEng vimEng;
-    private final List<String> options;
-    private final Consumer<Line> consumer;
-    private final TrieMapManager trieMapManager;
-    private final ExecutorService executorService;
+    private List<T> options;
+    private Consumer<R> resultConsumer;
+    private Function<T, String> optionToStrFunc;
+    private Function<Telescope<T, R>, R> onEnterFunc;
+    private TrieMapManager trieMapManager;
+    private ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor();
 
     /* --------------------------------------------------------------- *
      *  Optional customisation (builder defaults)                        *
      * --------------------------------------------------------------- */
-    private final long timeout;
-    private final TimeUnit timeoutUnit;
-    private final FuzzyMatcherV1 matcher;               // can be null → created internally
+    private long timeout = 30;
+    private TimeUnit timeoutUnit = TimeUnit.SECONDS;
+    private FuzzyMatcherV1 matcher;               // can be null → created internally
 
     /* --------------------------------------------------------------- *
      *  Internal plumbing – not exposed to the user                      *
      * --------------------------------------------------------------- */
-    private CompletableFuture<Line> resultFuture;
+    private CompletableFuture<R> resultFuture;
     private View currView;
     private View telescopeView;
     private Buf inputBuf;
@@ -74,22 +71,28 @@ public final class Telescope {
     private int inputBufNo;
     private int resultsBufNo;
 
-    /* --------------------------------------------------------------- *
-     *  Private constructor – only the Builder can create instances    *
-     * --------------------------------------------------------------- */
-    private Telescope(Builder builder) {
-        this.vimEng = Objects.requireNonNull(builder.vimEng);
-        this.options = List.copyOf(Objects.requireNonNull(builder.options));
-        this.consumer = Objects.requireNonNull(builder.consumer);
-
-        this.timeout = builder.timeout;
-        this.timeoutUnit = Objects.requireNonNull(builder.timeoutUnit);
-        this.matcher = builder.matcher;   // may be null → lazy init later
-        this.trieMapManager = builder.trieMapManager;
-        this.executorService = builder.executorService;
-
-        start(); //non-blocking
+    public Telescope(VimEng vimEng) {
+        this.vimEng = vimEng;
     }
+
+    public Telescope(VimEng vimEng,
+                     List<T> options,
+                     Consumer<R> resultConsumer,
+                     Function<Telescope<T, R>, R> onEnterFunc,
+                     TrieMapManager trieMapManager,
+                     long timeout,
+                     TimeUnit timeoutUnit) {
+        this.vimEng = vimEng;
+        this.options = options;
+        this.resultConsumer = resultConsumer;
+        this.onEnterFunc = onEnterFunc;
+        this.trieMapManager = trieMapManager;
+        this.executorService = Executors.newVirtualThreadPerTaskExecutor();
+        this.timeout = timeout;
+        this.timeoutUnit = timeoutUnit;
+    }
+
+
 
     /* --------------------------------------------------------------- *
      *  Public entry point                                               *
@@ -102,11 +105,17 @@ public final class Telescope {
     public void start() {
         resultFuture = new CompletableFuture<>();
 
+        List<String> optionStrs = options.stream().map(obj -> optionToStrFunc.apply(obj)).toList();
+
         // 1️⃣  Initialise views and buffers
         initViewsAndBuffers();
 
+        // 2️⃣  Populate the results buffer with the raw options
+        resultsBuf.setLines(Line.convert(optionStrs));
+
+
         // 4️⃣  Set up fuzzy matcher & buffer‑change listener
-        registerBufChangeListener(getFuzzyMatcher());
+        registerBufChangeListener(getFuzzyMatcher(optionStrs));
 
         // 5️⃣  Register the default key‑maps and any extra ones supplied by the caller
         registerDefaultKeyMaps();
@@ -115,9 +124,9 @@ public final class Telescope {
         awaitResult();
     }
 
-    private FuzzyMatcherV1 getFuzzyMatcher() {
+    private FuzzyMatcherV1 getFuzzyMatcher(List<String> optionsStr) {
         return (matcher != null) ? matcher
-                : new FuzzyMatcherV1(options, OrderBy.SCORE, true, false);
+                : new FuzzyMatcherV1(optionsStr, OrderBy.SCORE, true, false);
     }
 
     /* --------------------------------------------------------------- *
@@ -136,9 +145,6 @@ public final class Telescope {
 
         inputBuf   = telescopeView.getBuffer(inputBufNo);
         resultsBuf = telescopeView.getBuffer(resultsBufNo);
-
-        // 2️⃣  Populate the results buffer with the raw options
-        resultsBuf.setLines(Line.convert(options));
 
         // 3️⃣  Initialise UI state (arrow on first line, focus input)
         telescopeView.setActiveBuf(inputBufNo);
@@ -187,13 +193,7 @@ public final class Telescope {
         // <Enter> – confirm current selection
         trieMapManager.reMap(List.of(VimMode.INSERT, VimMode.COMMAND), "<enter>", "accept selection",
                 is -> {
-                    Line selected = resultsBuf.getCurrentLine();
-                    Line inputSel = inputBuf.getCurrentLine();
-                    if (!selected.isEmpty()) {
-                        resultFuture.complete(selected);
-                    } else {
-                        resultFuture.complete(inputSel);
-                    }
+                    resultFuture.complete(onEnterFunc.apply(this));
                     return null;
                 }, true);
 //        vKeyMaps.reMap(List.of(VimMode.COMMAND), "d", "escape telescope",
@@ -210,11 +210,13 @@ public final class Telescope {
     private void awaitResult() {
         executorService.submit(() -> {
             try {
-                Line lineResult = resultFuture.get(timeout, timeoutUnit);
+                R lineResult = resultFuture.get(timeout, timeoutUnit);
                 if (lineResult != null) {
                     System.out.println("Telescope result: " + lineResult);
                     revertTelescopeView(vimEng, currView, telescopeView, trieMapManager);
-                    consumer.accept(lineResult);
+                    if (resultConsumer != null) {
+                        resultConsumer.accept(lineResult);
+                    }
                 }
             } catch (Exception e) {
                 // Timeout, cancellation or any other problem – just log
@@ -222,69 +224,6 @@ public final class Telescope {
                 revertTelescopeView(vimEng, currView, telescopeView, trieMapManager);
             }
         });
-    }
-
-    /* --------------------------------------------------------------- *
-     *  Builder – fluent API                                            *
-     * --------------------------------------------------------------- */
-    public static Builder builder(VimEng vimEng,
-                                  TrieMapManager trieMapManager) {
-        return new Builder(vimEng, trieMapManager);
-    }
-
-    public void cancelFuture() {
-        resultFuture.cancel(true);
-    }
-
-    public static final class Builder {
-        // required
-        private final VimEng vimEng;
-        private List<String> options;
-        private Consumer<Line> consumer;
-        private final TrieMapManager trieMapManager;
-        private ExecutorService executorService;
-
-        // optional – sensible defaults
-        private long timeout = 10000;                 // 100 units by default
-        private TimeUnit timeoutUnit = TimeUnit.SECONDS;
-        private FuzzyMatcherV1 matcher = null;      // lazy‑created if null
-
-        private Builder(VimEng vimEng,
-                        TrieMapManager trieMapManager) {
-            this.vimEng = vimEng;
-            this.trieMapManager = trieMapManager;
-        }
-
-        /** Change the amount of time we wait for a selection before timing out. */
-        public Builder timeout(long amount, TimeUnit unit) {
-            this.timeout = amount;
-            this.timeoutUnit = Objects.requireNonNull(unit);
-            return this;
-        }
-
-        public Builder options(List<String> options) {
-            this.options = options;
-            return this;
-        }
-
-        public Builder consumer(Consumer<Line> consumer) {
-            this.consumer = consumer;
-            return this;
-        }
-
-        /** Provide a custom fuzzy matcher (otherwise a default one is built). */
-        public Builder matcher(FuzzyMatcherV1 matcher) {
-            this.matcher = matcher;
-            return this;
-        }
-
-        /** Build the immutable {@link Telescope} instance. */
-        public Telescope buildAndRun() {
-            if (executorService == null) {
-                executorService = Executors.newVirtualThreadPerTaskExecutor();
-            }
-            return new Telescope(this);
-        }
     }
 
     public static void moveArrowInResults(Buf resultsBuf,
@@ -329,4 +268,43 @@ public final class Telescope {
         return null;
     }
 
+    public Buf getResultsBuf() {
+        return resultsBuf;
+    }
+
+    public Buf getInputBuf() {
+        return inputBuf;
+    }
+
+    public CompletableFuture<R> getResultFuture() {
+        return resultFuture;
+    }
+
+    public void cancelFuture() {
+        resultFuture.cancel(true);
+    }
+
+    public void setOptions(List<T> options) {
+        this.options = options;
+    }
+
+    public void setConsumer(Consumer<R> resultConsumer) {
+        this.resultConsumer = resultConsumer;
+    }
+
+    public void setOnEnterFunc(Function<Telescope<T, R>, R> onEnterFunc) {
+        this.onEnterFunc = onEnterFunc;
+    }
+
+    public void setTreiManager(TrieMapManager tm) {
+        this.trieMapManager = tm;
+    }
+
+    public Function<T, String> getOptionToStrFunc() {
+        return optionToStrFunc;
+    }
+
+    public void setOptionToStrFunc(Function<T, String> optionToStrFunc) {
+        this.optionToStrFunc = optionToStrFunc;
+    }
 }

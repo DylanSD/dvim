@@ -216,6 +216,11 @@ public class VimEng {
         getView().getBuffer(bufNo).addToCol(colDelta);
     }
 
+    public void moveCursorAbs(int bufNo, int rowDelta, int colDelta) {
+        getView().getBuffer(bufNo).addToRow(rowDelta);
+        getView().getBuffer(bufNo).addToCol(colDelta);
+    }
+
     public void moveCursor(int rowDelta, int colDelta) {
         moveCursor(getView().getActiveBufNo(), rowDelta, colDelta);
     }
@@ -230,6 +235,10 @@ public class VimEng {
 
     public Line getCurrentLine() {
         return getView().getBuffer(getView().getActiveBufNo()).getCurrentLine();
+    }
+
+    public Line getLineAt(int row) {
+        return getView().getBuffer(getView().getActiveBufNo()).getLine(row);
     }
 
     private Line getCurrentLine(View view, int bufNo) {

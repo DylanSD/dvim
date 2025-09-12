@@ -252,7 +252,7 @@ public class Buf {
         return name;
     }
 
-    public void setLinesStr(List<String> lines) {
+    public void setLinesListStr(List<String> lines) {
         setLines(IntStream.range(0, lines.size())
                 .mapToObj(i -> new Line(i, lines.get(i), null))
                 .collect(Collectors.toList()));

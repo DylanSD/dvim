@@ -1,6 +1,5 @@
 package com.dksd.dvim.utils;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class RingBuffer<T> {
@@ -56,6 +55,10 @@ public class RingBuffer<T> {
     public void setCurrent(T value) {
         items.add(value);
         currentIndex = items.indexOf(value);
+    }
+
+    public int getNextInt() {
+        return items.size();
     }
 }
 

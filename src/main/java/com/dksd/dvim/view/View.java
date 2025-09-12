@@ -1,11 +1,9 @@
 package com.dksd.dvim.view;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -22,8 +20,6 @@ import com.dksd.dvim.buffer.BufferMode;
 import com.dksd.dvim.event.VimEvent;
 import com.dksd.dvim.event.VimListener;
 import com.dksd.dvim.higlight.JavaSyntaxHighlighter;
-import com.dksd.dvim.mapping.trie.TrieMapManager;
-import com.dksd.dvim.mapping.trie.TrieNode;
 import com.googlecode.lanterna.Symbols;
 import com.googlecode.lanterna.TerminalPosition;
 import com.googlecode.lanterna.TerminalSize;
@@ -33,8 +29,6 @@ import com.googlecode.lanterna.graphics.TextGraphics;
 import com.googlecode.lanterna.screen.TerminalScreen;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static com.dksd.dvim.complete.Telescope.moveArrowInResults;
 
 public class View {
 

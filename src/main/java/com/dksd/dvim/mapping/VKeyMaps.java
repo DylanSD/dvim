@@ -4,15 +4,17 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Stream;
 
 import com.dksd.dvim.buffer.Buf;
 import com.dksd.dvim.engine.VimEng;
 import com.dksd.dvim.history.Harpoons;
 import com.dksd.dvim.model.ChatModel;
+import com.dksd.dvim.model.ModelName;
 import com.dksd.dvim.utils.ScriptBuilder;
 import com.dksd.dvim.mapping.trie.TrieMapManager;
 import com.dksd.dvim.complete.TabCompletion;
@@ -22,12 +24,15 @@ import com.dksd.dvim.view.VimMode;
 import com.dksd.dvim.view.Line;
 import com.googlecode.lanterna.input.KeyStroke;
 import com.googlecode.lanterna.input.KeyType;
+import de.gesundkrank.fzf4j.matchers.FuzzyMatcherV1;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static com.dksd.dvim.utils.PathHelper.getCurrentDir;
+import static com.dksd.dvim.utils.PathHelper.streamPath;
+import static com.dksd.dvim.utils.PathHelper.streamPathToStr;
 import static com.dksd.dvim.view.View.MAIN_BUFFER;
 import static com.dksd.dvim.view.View.SIDE_BUFFER;
-
 
 public class VKeyMaps {
 
@@ -38,14 +43,14 @@ public class VKeyMaps {
     private final TrieMapManager tm;
     private final ScriptBuilder sb = new ScriptBuilder();
     private final Harpoons harpoons = new Harpoons();
-    private Telescope telescope;
-    private ChatModel chatModel = new ChatModel();
+    private ChatModel chatMercuryModel = new ChatModel(ModelName.MERCURY);
+    private ChatModel chatMercuryCoderModel = new ChatModel(ModelName.MERCURY_CODER);
 
     public VKeyMaps(VimEng ve, TrieMapManager tm) {
         this.vimEng = ve;
         this.tm = tm;
         loadVimKeyConverter();
-        harpoons.add(Harpoons.DIRS, System.getProperty("user.dir"));
+        harpoons.add(Harpoons.DIRS, getCurrentDir().toString());
     }
 
     //TODO  read this from configuration file or something
@@ -161,11 +166,12 @@ public class VKeyMaps {
             vimEng.moveCursor(-1, 0); //up
             return null;//no mapping
         }, true);
-        tm.putKeyMap(VimMode.COMMAND, "/", "desc", s -> {
+        tm.putKeyMap(VimMode.COMMAND, "/", "search for text and jump to the text", s -> {
             vimEng.setVimMode(VimMode.INSERT);
             telescope(Line.convertLines(vimEng.getView().getActiveBuf().getLinesDangerous()),
                     lineResult -> {
-                        vimEng.moveCursor(vimEng.getView().getActiveBufNo(), lineResult.getLineNumber(), 0);
+                        Buf activeBuf = vimEng.getView().getActiveBuf();
+                        vimEng.moveCursor(activeBuf.getBufNo(), lineResult.getLineNumber() - vimEng.getRow(), vimEng.getLineAt(lineResult.getLineNumber()).getContent().indexOf(lineResult.getContent()) - vimEng.getCol());
                         vimEng.setVimMode(VimMode.COMMAND);
                     });
             return null;//no mapping
@@ -200,9 +206,16 @@ public class VKeyMaps {
                     });
             return null;//no mapping
         }, true);
-        tm.putKeyMap(List.of(VimMode.COMMAND, VimMode.INSERT), "<c-p>", "call llm", s -> {
-            chatModel.chat("Can you review the text that follows and offer suggestions?: " +
+        tm.putKeyMap(List.of(VimMode.COMMAND, VimMode.INSERT), "<leader>m", "call mercury llm", s -> {
+
+            chatMercuryModel.chat("Can you review the text that follows and offer suggestions?: " +
                     vimEng.getActiveBuf().getLinesAsStr(),
+                    vimEng.getView().getBufferByName(View.SIDE_BUFFER));
+            return null;//no mapping
+        }, true);
+        tm.putKeyMap(List.of(VimMode.COMMAND, VimMode.INSERT), "<leader>c", "call mercury coder llm", s -> {
+            chatMercuryCoderModel.chat("Can you review the text that follows and offer suggestions?: " +
+                            vimEng.getActiveBuf().getLinesAsStr(),
                     vimEng.getView().getBufferByName(View.SIDE_BUFFER));
             return null;//no mapping
         }, true);
@@ -284,9 +297,6 @@ public class VKeyMaps {
                     vimEng.setVimMode(VimMode.COMMAND);
                     vimEng.clearKeys();
                     vimEng.cancelTelescope();
-                    if (telescope != null) {
-                        telescope.cancelFuture();
-                    }
                     System.out.println("Pressed Esc to go into command mode");
                     return null;//no mapping
                 });
@@ -303,7 +313,7 @@ public class VKeyMaps {
             return null;//no mapping
         });
         tm.putKeyMap(VimMode.COMMAND, "<leader>ff", "find files", s -> {
-            telescope(streamPath(getCurrentPath(), Files::isRegularFile).toList(),
+            telescope(streamPathToStr(getCurrentPath(), Files::isRegularFile).toList(),
                     lineResult -> {
                 vimEng.loadFile(vimEng.getActiveBuf(), lineResult.getContent());
             });
@@ -312,9 +322,9 @@ public class VKeyMaps {
         tm.putKeyMap(VimMode.COMMAND, "<leader>fd", "find and set directories", s -> {
             Predicate<Path> filter = path -> Files.isDirectory(path) &&
                     (path.toString().contains("projects") ||
-                    path.toString().contains("wtcode") ||
-                    path.toString().contains("dev"));
-            telescope(streamPath(getCurrentPath().getParent(), filter).toList(), line -> {
+                            path.toString().contains("wtcode") ||
+                            path.toString().contains("dev"));
+            telescope(streamPathToStr(getCurrentPath().getParent(), filter).toList(), line -> {
                 setCurrentDir(line.getContent());
             });
             return null;
@@ -347,6 +357,10 @@ public class VKeyMaps {
         tm.putKeyMap(VimMode.COMMAND, "<leader>fm", "find key mapping", s -> {
             //telescope(keysMappings.stream().toList(), lineResult -> harpoons.add(Harpoons.CLIPBOARD, lineResult.getContent()));
             //TODO
+            return null;
+        });
+        tm.putKeyMap(VimMode.COMMAND, "<leader>fh", "find harpoons", s -> {
+            telescope(harpoons.getList(), null);
             return null;
         });
         //Be kind cool to show various time options in telescope, then select mapping then another
@@ -548,26 +562,21 @@ public class VKeyMaps {
     }
 
     private void telescope(List<String> options, Consumer<Line> consumer) {
-        //Support delete, tab completions as well from AI yes?
-        telescope = Telescope.builder(vimEng, tm)
-                .options(options)
-                .consumer(consumer)
-                .timeout(30, TimeUnit.SECONDS)                 // shorter timeout
-                .buildAndRun();
-    }
-
-    public static Stream<String> streamPath(Path dir, Predicate<Path> filter) {
-        try {
-            return Files.walk(dir)
-                    .filter(filter)
-                    .map((path) -> path.toAbsolutePath().toString())
-                    .filter(file -> !file.contains("/build/"))
-                    .filter(file -> !file.contains("/target/"))
-                    .filter(file -> file.contains("/src/"))
-                    .limit(100);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        Telescope<String, Line> telescope = new Telescope<>(vimEng);
+        telescope.setOptions(options);
+        telescope.setConsumer(consumer);
+        telescope.setOptionToStrFunc(String::toString);
+        telescope.setOnEnterFunc(tele -> {
+            Line selected = tele.getResultsBuf().getCurrentLine();
+            if (!selected.isEmpty()) {
+                telescope.getResultFuture().complete(selected);
+            } else {
+                telescope.getResultFuture().complete(tele.getInputBuf().getCurrentLine());
+            }
+            return null;
+        });
+        telescope.setTreiManager(tm);
+        telescope.start();
     }
 
     private void shiftMap(char chr) {

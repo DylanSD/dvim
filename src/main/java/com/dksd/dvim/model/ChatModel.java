@@ -19,22 +19,23 @@ public class ChatModel {
 
     private Logger logger = LoggerFactory.getLogger(ChatModel.class);
     private static final String INCEPTION_API_KEY = System.getenv("INCEPTION_API_KEY");
-    private final OpenAiStreamingChatModel chatModel;
-    private static final String MODEL = "mercury";
+    private ModelName modelName;
+    OpenAiStreamingChatModel model;
 
-    public ChatModel() {
-        chatModel = OpenAiStreamingChatModel.builder()
+    public ChatModel(ModelName modelName) {
+        this.modelName = modelName;
+        model = OpenAiStreamingChatModel.builder()
                 .apiKey(INCEPTION_API_KEY)
                 .baseUrl("https://api.inceptionlabs.ai/v1")
-                .modelName(MODEL)
+                .modelName(modelName.getMdoelName())
                 .timeout(Duration.ofSeconds(10))
                 .maxTokens(512)
                 .build();
     }
 
     public void chat(String prompt, Buf destBuf) {
-        destBuf.addRow("Sending LLM request to model: " + MODEL);
-        chatModel.chat(prompt, new StreamingChatResponseHandler() {
+        destBuf.addRow("Sending LLM request to model: " + modelName);
+        model.chat(prompt, new StreamingChatResponseHandler() {
 
             @Override
             public void onPartialResponse(String partialResponse) {
