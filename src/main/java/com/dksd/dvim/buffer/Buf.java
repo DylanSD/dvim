@@ -18,6 +18,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import com.dksd.dvim.utils.LinesHelper;
 import com.dksd.dvim.view.DispObj;
 import com.dksd.dvim.event.EventType;
 import com.dksd.dvim.event.VimEvent;
@@ -253,9 +254,7 @@ public class Buf {
     }
 
     public void setLinesListStr(List<String> lines) {
-        setLines(IntStream.range(0, lines.size())
-                .mapToObj(i -> new Line(i, lines.get(i), null))
-                .collect(Collectors.toList()));
+        setLines(LinesHelper.convertToLines(lines));
     }
 
     public void setLines(List<Line> keptLines) {

@@ -38,7 +38,7 @@ import java.util.function.Function;
  *
  *   telescope.start();   // opens the UI and blocks until a line is chosen
  */
-public final class Telescope<T, R> {
+public final class Telescope<T> {
 
     public static final String ROW_INDICATOR = ">";
     /* --------------------------------------------------------------- *
@@ -46,9 +46,9 @@ public final class Telescope<T, R> {
      * --------------------------------------------------------------- */
     private final VimEng vimEng;
     private List<T> options;
-    private Consumer<R> resultConsumer;
     private Function<T, String> optionToStrFunc;
-    private Function<Telescope<T, R>, R> onEnterFunc;
+    private Function<Telescope<T>, T> onEnterFunc;
+    private Consumer<T> resultConsumer;
     private TrieMapManager trieMapManager;
     private ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor();
 
@@ -62,7 +62,7 @@ public final class Telescope<T, R> {
     /* --------------------------------------------------------------- *
      *  Internal plumbing – not exposed to the user                      *
      * --------------------------------------------------------------- */
-    private CompletableFuture<R> resultFuture;
+    private CompletableFuture<T> resultFuture;
     private View currView;
     private View telescopeView;
     private Buf inputBuf;
@@ -76,8 +76,8 @@ public final class Telescope<T, R> {
 
     public Telescope(VimEng vimEng,
                      List<T> options,
-                     Consumer<R> resultConsumer,
-                     Function<Telescope<T, R>, R> onEnterFunc,
+                     Function<Telescope<T>, T> onEnterFunc,
+                     Consumer<T> resultConsumer,
                      TrieMapManager trieMapManager,
                      long timeout,
                      TimeUnit timeoutUnit) {
@@ -111,8 +111,7 @@ public final class Telescope<T, R> {
 
         // 2️⃣  Populate the results buffer with the raw options
         resultsBuf.setLines(Line.convert(optionStrs));
-
-
+        
         // 4️⃣  Set up fuzzy matcher & buffer‑change listener
         registerBufChangeListener(getFuzzyMatcher(optionStrs));
 
@@ -209,7 +208,7 @@ public final class Telescope<T, R> {
     private void awaitResult() {
         executorService.submit(() -> {
             try {
-                R lineResult = resultFuture.get(timeout, timeoutUnit);
+                T lineResult = resultFuture.get(timeout, timeoutUnit);
                 if (lineResult != null) {
                     System.out.println("Telescope result: " + lineResult);
                     revertTelescopeView(vimEng, currView, telescopeView, trieMapManager);
@@ -275,7 +274,7 @@ public final class Telescope<T, R> {
         return inputBuf;
     }
 
-    public CompletableFuture<R> getResultFuture() {
+    public CompletableFuture<T> getResultFuture() {
         return resultFuture;
     }
 
@@ -287,15 +286,15 @@ public final class Telescope<T, R> {
         this.options = options;
     }
 
-    public void setConsumer(Consumer<R> resultConsumer) {
+    public void setResultConsumer(Consumer<T> resultConsumer) {
         this.resultConsumer = resultConsumer;
     }
 
-    public void setOnEnterFunc(Function<Telescope<T, R>, R> onEnterFunc) {
+    public void setOnEnterFunc(Function<Telescope<T>, T> onEnterFunc) {
         this.onEnterFunc = onEnterFunc;
     }
 
-    public void setTreiManager(TrieMapManager tm) {
+    public void setTrieManager(TrieMapManager tm) {
         this.trieMapManager = tm;
     }
 

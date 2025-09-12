@@ -8,6 +8,7 @@ import com.dksd.dvim.history.Harpoons;
 import com.dksd.dvim.mapping.trie.TrieMapManager;
 import com.dksd.dvim.model.ChatModel;
 import com.dksd.dvim.model.ModelName;
+import com.dksd.dvim.utils.LinesHelper;
 import com.dksd.dvim.utils.ScriptBuilder;
 import com.dksd.dvim.view.Line;
 import com.dksd.dvim.view.View;
@@ -21,6 +22,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 import static com.dksd.dvim.utils.PathHelper.getCurrentDir;
@@ -551,11 +553,15 @@ public class VKeyMaps {
         return harpoons.getDirs().current();
     }
 
-    private void telescope(List<String> options, Consumer<Line> consumer) {
-        Telescope<String, Line> telescope = new Telescope<>(vimEng);
+    private void telescope(List<String> options, Consumer<Line> resultConsumer) {
+        telescopeLine(LinesHelper.convertToLines(options), resultConsumer);
+    }
+
+    private Telescope<Line> telescopeLine(List<Line> options, Consumer<Line> resultConsumer) {
+        Telescope<Line> telescope = new Telescope<>(vimEng);
         telescope.setOptions(options);
-        telescope.setConsumer(consumer);
-        telescope.setOptionToStrFunc(String::toString);
+        telescope.setOptionToStrFunc(Line::toString);
+        telescope.setResultConsumer(resultConsumer);
         telescope.setOnEnterFunc(tele -> {
             Line selected = tele.getResultsBuf().getCurrentLine();
             if (!selected.isEmpty()) {
@@ -565,8 +571,9 @@ public class VKeyMaps {
             }
             return null;
         });
-        telescope.setTreiManager(tm);
+        telescope.setTrieManager(tm);
         telescope.start();
+        return telescope;
     }
 
     private void shiftMap(char chr) {
