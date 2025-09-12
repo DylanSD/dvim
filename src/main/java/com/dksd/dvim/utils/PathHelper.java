@@ -1,7 +1,6 @@
 package com.dksd.dvim.utils;
 
 import com.dksd.dvim.buffer.Buf;
-import com.dksd.dvim.history.Harpoon;
 import com.dksd.dvim.history.Harpoons;
 
 import java.io.IOException;

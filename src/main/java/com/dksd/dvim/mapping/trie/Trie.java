@@ -13,7 +13,6 @@ public class Trie {
      * Inserts a word into the trie and associates it with a function.
      * If the word already exists, adds another function to the existing node.
      *
-     * @param word      the word to insert; must not be {@code null}
      * @param desc      description associated with the function
      * @param rightFunc the function to associate with this word
      * @return the TrieNode corresponding to the inserted word

@@ -1,29 +1,27 @@
 package com.dksd.dvim.mapping;
 
+import com.dksd.dvim.buffer.Buf;
+import com.dksd.dvim.complete.TabCompletion;
+import com.dksd.dvim.complete.Telescope;
+import com.dksd.dvim.engine.VimEng;
+import com.dksd.dvim.history.Harpoons;
+import com.dksd.dvim.mapping.trie.TrieMapManager;
+import com.dksd.dvim.model.ChatModel;
+import com.dksd.dvim.model.ModelName;
+import com.dksd.dvim.utils.ScriptBuilder;
+import com.dksd.dvim.view.Line;
+import com.dksd.dvim.view.View;
+import com.dksd.dvim.view.VimMode;
+import com.googlecode.lanterna.input.KeyStroke;
+import com.googlecode.lanterna.input.KeyType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
-
-import com.dksd.dvim.buffer.Buf;
-import com.dksd.dvim.engine.VimEng;
-import com.dksd.dvim.history.Harpoon;
-import com.dksd.dvim.history.HarpoonType;
-import com.dksd.dvim.history.Harpoons;
-import com.dksd.dvim.model.ChatModel;
-import com.dksd.dvim.model.ModelName;
-import com.dksd.dvim.utils.ScriptBuilder;
-import com.dksd.dvim.mapping.trie.TrieMapManager;
-import com.dksd.dvim.complete.TabCompletion;
-import com.dksd.dvim.complete.Telescope;
-import com.dksd.dvim.view.View;
-import com.dksd.dvim.view.VimMode;
-import com.dksd.dvim.view.Line;
-import com.googlecode.lanterna.input.KeyStroke;
-import com.googlecode.lanterna.input.KeyType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static com.dksd.dvim.utils.PathHelper.getCurrentDir;
 import static com.dksd.dvim.utils.PathHelper.streamPathToStr;
@@ -79,27 +77,27 @@ public class VKeyMaps {
                     new KeyStroke(Character.toUpperCase((char) i), false, true, true),
                     "<sa-" + chr.toUpperCase() + ">");
         }
-        shiftMap( '!');
-        shiftMap( '@');
-        shiftMap( '#');
-        shiftMap( '$');
-        shiftMap( '%');
-        shiftMap( '^');
-        shiftMap( '&');
-        shiftMap( '*');
-        shiftMap( '(');
-        shiftMap( ')');
-        shiftMap( '_');
-        shiftMap( '+');
-        shiftMap( '{');
-        shiftMap( '}');
-        shiftMap( '|');
-        shiftMap( '"');
-        shiftMap( ':');
-        shiftMap( '<');
-        shiftMap( '>');
-        shiftMap( '?');
-        shiftMap( '~');
+        shiftMap('!');
+        shiftMap('@');
+        shiftMap('#');
+        shiftMap('$');
+        shiftMap('%');
+        shiftMap('^');
+        shiftMap('&');
+        shiftMap('*');
+        shiftMap('(');
+        shiftMap(')');
+        shiftMap('_');
+        shiftMap('+');
+        shiftMap('{');
+        shiftMap('}');
+        shiftMap('|');
+        shiftMap('"');
+        shiftMap(':');
+        shiftMap('<');
+        shiftMap('>');
+        shiftMap('?');
+        shiftMap('~');
 
         tm.addStrokeMapping(new KeyStroke(' ', false, false, false), "<leader>");
         tm.addStrokeMapping(new KeyStroke(KeyType.Enter, false, false, false), "<enter>");
@@ -205,7 +203,7 @@ public class VKeyMaps {
         tm.putKeyMap(List.of(VimMode.COMMAND, VimMode.INSERT), "<leader>m", "call mercury llm", s -> {
 
             chatMercuryModel.chat("Can you review the text that follows and offer suggestions?: " +
-                    vimEng.getActiveBuf().getLinesAsStr(),
+                            vimEng.getActiveBuf().getLinesAsStr(),
                     vimEng.getView().getBufferByName(View.SIDE_BUFFER));
             return null;//no mapping
         }, true);
@@ -311,8 +309,8 @@ public class VKeyMaps {
         tm.putKeyMap(VimMode.COMMAND, "<leader>ff", "find files", s -> {
             telescope(streamPathToStr(getCurrentPath(), Files::isRegularFile).toList(),
                     lineResult -> {
-                vimEng.loadFile(vimEng.getActiveBuf(), lineResult.getContent());
-            });
+                        vimEng.loadFile(vimEng.getActiveBuf(), lineResult.getContent());
+                    });
             return null;
         });
         tm.putKeyMap(VimMode.COMMAND, "<leader>fd", "find and set directories", s -> {

@@ -1,5 +1,19 @@
 package com.dksd.dvim.engine;
 
+import com.dksd.dvim.buffer.Buf;
+import com.dksd.dvim.mapping.VKeyMaps;
+import com.dksd.dvim.mapping.trie.TrieMapManager;
+import com.dksd.dvim.mapping.trie.TrieNode;
+import com.dksd.dvim.utils.SFormatter;
+import com.dksd.dvim.view.Line;
+import com.dksd.dvim.view.View;
+import com.dksd.dvim.view.VimMode;
+import com.googlecode.lanterna.input.KeyStroke;
+import com.googlecode.lanterna.input.KeyType;
+import com.googlecode.lanterna.screen.TerminalScreen;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -10,23 +24,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-
-import com.dksd.dvim.mapping.trie.TrieMapManager;
-import com.dksd.dvim.view.VimMode;
-import com.dksd.dvim.buffer.Buf;
-import com.dksd.dvim.mapping.VKeyMaps;
-import com.dksd.dvim.mapping.trie.TrieNode;
-import com.dksd.dvim.utils.SFormatter;
-import com.dksd.dvim.view.Line;
-import com.dksd.dvim.view.View;
-import com.googlecode.lanterna.input.KeyStroke;
-import com.googlecode.lanterna.input.KeyType;
-import com.googlecode.lanterna.screen.TerminalScreen;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class VimEng {
     private Logger logger = LoggerFactory.getLogger(VimEng.class);

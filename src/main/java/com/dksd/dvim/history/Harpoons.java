@@ -3,7 +3,6 @@ package com.dksd.dvim.history;
 import com.dksd.dvim.buffer.Buf;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
