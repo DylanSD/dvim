@@ -18,13 +18,15 @@ public class Trie {
      * @param rightFunc the function to associate with this word
      * @return the TrieNode corresponding to the inserted word
      */
-    public TrieNode insert(String word, String desc, Function<String, String> rightFunc) {
+    public TrieNode insert(String left, String desc, Function<String, String> rightFunc) {
         TrieNode current = root;
 
-        for (char l: word.toCharArray()) {
+        for (char l: left.toCharArray()) {
             current = current.getChildren().computeIfAbsent(l, c -> new TrieNode());
         }
-        current.setWord(true);
+        current.setIsCompleteWord(true);
+        current.setLeftWord(left);
+        current.setDescription(desc);
         current.addFunction(desc, rightFunc);
         return current;
     }
@@ -59,10 +61,10 @@ public class Trie {
 
     private boolean delete(TrieNode current, String word, int index) {
         if (index == word.length()) {
-            if (!current.isWord()) {
+            if (!current.isCompleteWord()) {
                 return false;
             }
-            current.setWord(false);
+            current.setIsCompleteWord(false);
             return current.getChildren().isEmpty();
         }
         char ch = word.charAt(index);
@@ -70,7 +72,7 @@ public class Trie {
         if (node == null) {
             return false;
         }
-        boolean shouldDeleteCurrentNode = delete(node, word, index + 1) && !node.isWord();
+        boolean shouldDeleteCurrentNode = delete(node, word, index + 1) && !node.isCompleteWord();
 
         if (shouldDeleteCurrentNode) {
             current.getChildren().remove(ch);

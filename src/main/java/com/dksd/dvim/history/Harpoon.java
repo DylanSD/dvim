@@ -8,15 +8,15 @@ import java.util.List;
 
 public class Harpoon<T> extends RingBuffer<T> {
 
-    private final String key;
+    private final HarpoonType type;
 
-    public Harpoon(String key, List<T> items) {
+    public Harpoon(HarpoonType type, List<T> items) {
         super(items);
-        this.key = key;
+        this.type = type;
     }
 
-    public Harpoon(String key) {
+    public Harpoon(HarpoonType type) {
         super(Collections.synchronizedList(new ArrayList<>()));
-        this.key = key;
+        this.type = type;
     }
 }

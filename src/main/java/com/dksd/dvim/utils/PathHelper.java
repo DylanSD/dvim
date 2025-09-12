@@ -1,6 +1,7 @@
 package com.dksd.dvim.utils;
 
 import com.dksd.dvim.buffer.Buf;
+import com.dksd.dvim.history.Harpoon;
 import com.dksd.dvim.history.Harpoons;
 
 import java.io.IOException;
@@ -49,7 +50,7 @@ public class PathHelper {
         return streamPath(dir, filter, null)
                 .map(path -> {
                     try {
-                        Buf buf = new Buf(path.toString(), path.toString(), harpoons.get(Harpoons.BUFFERS).getNextInt(), null, null, false);
+                        Buf buf = new Buf(path.toString(), path.toString(), harpoons.getBuffers().getNextInt(), null, null, false);
                         buf.setLinesListStr(Files.readAllLines(path, StandardCharsets.UTF_8));
                         return buf;
                     } catch (IOException e) {

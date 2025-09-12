@@ -38,9 +38,6 @@ public class VimEng {
     private TerminalScreen terminalScreen;
     private final ExecutorService threadPool;
     private final ScheduledExecutorService newScheduledThread = Executors.newSingleThreadScheduledExecutor();
-
-    private AtomicInteger hashDrawn = new AtomicInteger();
-    private AtomicLong lastDrawn = new AtomicLong();
     private AtomicLong lastClearKeys = new AtomicLong();
     private AtomicReference<String> activeView = new AtomicReference<>(START_VIEW);
     private VKeyMaps vKeyMaps;
@@ -52,20 +49,14 @@ public class VimEng {
         views.put(TELESCOPE_VIEW, new View(TELESCOPE_VIEW, screen, threadPool));
         newScheduledThread.scheduleWithFixedDelay(() -> {
             long st = System.currentTimeMillis();
-            int hash = getView().hashCode();
-            if (hash != hashDrawn.get()) {
-                getView().draw(terminalScreen);
-                hash = getView().hashCode();
-                hashDrawn.set(hash);
-                logger.info("Trigger hash key change draw: " + st);
-                lastDrawn.set(st);
-            }
+            getView().draw(terminalScreen);
+            logger.info("Trigger hash key change draw: " + st);
             if (st - lastClearKeys.get() > 1000) {
                 //TODO cant debug with this
                 //VimEng.clearKeys();
                 lastClearKeys.set(st);
             }
-        }, 10, 50, TimeUnit.MILLISECONDS);
+        }, 10, 20, TimeUnit.MILLISECONDS);
     }
 
     public View getView() {
@@ -274,7 +265,7 @@ public class VimEng {
         trieMapManager.mapRecursively(foundNodes, 0, vimMode.get(), vimCommands);
         if (foundNodes == null) {
             System.out.println("Did not find a command to run: " + vimCommands);
-        } else if (!foundNodes.isEmpty() && foundNodes.getFirst().isWord()) {
+        } else if (!foundNodes.isEmpty() && foundNodes.getFirst().isCompleteWord()) {
             keyStrokes.clear();
             //System.out.println("found and executed mapping and cleared keystrokes: " + vimCommands);
         } else {

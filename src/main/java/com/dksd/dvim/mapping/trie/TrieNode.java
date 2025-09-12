@@ -2,18 +2,20 @@ package com.dksd.dvim.mapping.trie;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 public class TrieNode {
-    private Map<Character, TrieNode> children = new HashMap<>();
+    //TODO can delay creating mem until needed.
+    private Map<Character, TrieNode> children = new ConcurrentHashMap<>();
     private String content;
-    private boolean isWord;
+    private boolean isCompleteWord;
     private List<Function<String, String>> functions = Collections.synchronizedList(new ArrayList<>());
-    private List<String> descriptions = new ArrayList<>();
     private boolean hideMap;
+    private String left;
+    private String desc;
 
     public Map<Character, TrieNode> getChildren() {
         return children;
@@ -31,12 +33,12 @@ public class TrieNode {
         this.content = content;
     }
 
-    public boolean isWord() {
-        return isWord;
+    public boolean isCompleteWord() {
+        return isCompleteWord;
     }
 
-    public void setWord(boolean word) {
-        isWord = word;
+    public void setIsCompleteWord(boolean isCompleteWord) {
+        this.isCompleteWord = isCompleteWord;
     }
 
     public Function<String, String> getLastFunc() {
@@ -48,11 +50,18 @@ public class TrieNode {
     }
 
     public void addFunction(String desc, Function<String, String> remapFunc) {
-        descriptions.add(desc);
         functions.add(remapFunc);
     }
 
     public void setHideMapping(boolean hideMap) {
         this.hideMap = hideMap;
+    }
+
+    public void setLeftWord(String left) {
+        this.left = left;
+    }
+
+    public void setDescription(String desc) {
+        this.desc = desc;
     }
 }

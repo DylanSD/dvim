@@ -11,6 +11,7 @@ import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
 
@@ -109,7 +110,7 @@ public class Main {
                 //textGraphics.putString(5 + "Terminal Size: ".length(), 3, newSize.toString());
                 //textGraphics.putString(5 + "Terminal Size: ".length(), 3, newSize.toString());
                 ve.getView().fitScrollView(newSize.getColumns(), newSize.getRows());
-                ve.getView().draw(screen);
+                //ve.getView().draw(screen);
             });
 
             ///textGraphics.putString(5, 4, "Last Keystroke: ", SGR.BOLD);
@@ -129,23 +130,16 @@ public class Main {
             KeyType, while regular alphanumeric and symbol keys are all under KeyType.Character. Notice that tab and
             enter are not considered KeyType.Character but special types (KeyType.Tab and KeyType.Enter respectively)
              */
-
+            long lastkeyTime = 0;
             do {
-                ve.getView().draw(screen);
                 KeyStroke key = screen.readInput();
-                //long st = System.currentTimeMillis();
                 if (key != null) {
                     ve.handleKey(trieMapManager, key);
+                    if (key.getEventTime() - lastkeyTime > 2) {
+                        ve.getView().draw(screen);
+                    }
+                    lastkeyTime = key.getEventTime();
                 }
-                //long ed = System.currentTimeMillis();
-                //System.out.println("Time: " + (ed - st));
-                //execute key mapping here
-                //can have buffers and windows...
-                //textGraphics.putString(col++, row, "" + keyStroke.getCharacter());
-                //screen.refresh();
-                //textGraphics.drawLine(5, 4, terminal.getTerminalSize().getColumns() - 1, 4, ' ');
-                //textGraphics.putString(5, 4, "Last Keystroke: ", SGR.BOLD);
-                //textGraphics.putString(5 + "Last Keystroke: ".length(), 4, keyStroke.toString());
             } while (true); //the engine will exit via a System.exit
 
         }

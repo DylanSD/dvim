@@ -27,7 +27,7 @@ public class TrieMapManager {
             return;
         }
         nodes.add(foundNode);
-        if (foundNode.isWord()) {
+        if (foundNode.isCompleteWord()) {
             String funcResult = foundNode.getLastFunc().apply(keyStrokes);
             if (!".".equals(keyStrokes)) {
                 prevExecFunctionNodes.addFirst(foundNode);
@@ -153,7 +153,7 @@ public class TrieMapManager {
         if (foundNode == null) {
             return;
         }
-        if (foundNode.isWord()) {
+        if (foundNode.isCompleteWord()) {
             foundNodes.add(foundNode);
         }
     }

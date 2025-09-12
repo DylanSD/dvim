@@ -1,17 +1,15 @@
 package com.dksd.dvim.mapping;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
 
 import com.dksd.dvim.buffer.Buf;
 import com.dksd.dvim.engine.VimEng;
+import com.dksd.dvim.history.Harpoon;
+import com.dksd.dvim.history.HarpoonType;
 import com.dksd.dvim.history.Harpoons;
 import com.dksd.dvim.model.ChatModel;
 import com.dksd.dvim.model.ModelName;
@@ -24,12 +22,10 @@ import com.dksd.dvim.view.VimMode;
 import com.dksd.dvim.view.Line;
 import com.googlecode.lanterna.input.KeyStroke;
 import com.googlecode.lanterna.input.KeyType;
-import de.gesundkrank.fzf4j.matchers.FuzzyMatcherV1;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static com.dksd.dvim.utils.PathHelper.getCurrentDir;
-import static com.dksd.dvim.utils.PathHelper.streamPath;
 import static com.dksd.dvim.utils.PathHelper.streamPathToStr;
 import static com.dksd.dvim.view.View.MAIN_BUFFER;
 import static com.dksd.dvim.view.View.SIDE_BUFFER;
@@ -38,8 +34,6 @@ public class VKeyMaps {
 
     private final VimEng vimEng;
     private Logger logger = LoggerFactory.getLogger(VKeyMaps.class);
-    //Used for duplication and getting a list of keys
-    //private final Set<String> keysMappings = new HashSet<>();
     private final TrieMapManager tm;
     private final ScriptBuilder sb = new ScriptBuilder();
     private final Harpoons harpoons = new Harpoons();
@@ -50,7 +44,7 @@ public class VKeyMaps {
         this.vimEng = ve;
         this.tm = tm;
         loadVimKeyConverter();
-        harpoons.add(Harpoons.DIRS, getCurrentDir().toString());
+        harpoons.getDirs().add(getCurrentDir());
     }
 
     //TODO  read this from configuration file or something
@@ -171,7 +165,9 @@ public class VKeyMaps {
             telescope(Line.convertLines(vimEng.getView().getActiveBuf().getLinesDangerous()),
                     lineResult -> {
                         Buf activeBuf = vimEng.getView().getActiveBuf();
-                        vimEng.moveCursor(activeBuf.getBufNo(), lineResult.getLineNumber() - vimEng.getRow(), vimEng.getLineAt(lineResult.getLineNumber()).getContent().indexOf(lineResult.getContent()) - vimEng.getCol());
+                        int foundRow = lineResult.getLineNumber();
+                        String foundStr = vimEng.getLineAt(foundRow).getContent();
+                        vimEng.moveCursor(activeBuf.getBufNo(), foundRow - vimEng.getRow(), foundStr.indexOf(lineResult.getContent()) - vimEng.getCol());
                         vimEng.setVimMode(VimMode.COMMAND);
                     });
             return null;//no mapping
@@ -262,18 +258,18 @@ public class VKeyMaps {
             return null;//no mapping
         });
         tm.putKeyMap(VimMode.COMMAND, "yy", "copy line to mem", s -> {
-            harpoons.addAll(Harpoons.CLIPBOARD, vimEng.copyLines(vimEng.getRow(), vimEng.getRow() + 1));
+            harpoons.getClipboard().add(vimEng.copyLines(vimEng.getRow(), vimEng.getRow() + 1));
             return null;//no mapping
         });
         tm.putKeyMap(VimMode.COMMAND, "dd", "deletes current line and stores in clipboard", s -> {
-            harpoons.addAll(Harpoons.CLIPBOARD, vimEng.copyLines(vimEng.getRow(), vimEng.getRow() + 1));
+            harpoons.getClipboard().add(vimEng.copyLines(vimEng.getRow(), vimEng.getRow() + 1));
             vimEng.deleteLines(vimEng.getRow());
             return null;//no mapping
         });
         tm.putKeyMap(VimMode.COMMAND, "p", "paste clipboard", s -> {
             Line line = vimEng.getCurrentLine();
             int col = vimEng.getCol();
-            String l = line.getContent().substring(0, col) + harpoons.get(Harpoons.CLIPBOARD) + line.getContent().substring(col);
+            String l = line.getContent().substring(0, col) + harpoons.getClipboard().current() + line.getContent().substring(col);
             vimEng.setLine(vimEng.getRow(), l);
             return null;//no mapping
         });
@@ -325,7 +321,7 @@ public class VKeyMaps {
                             path.toString().contains("wtcode") ||
                             path.toString().contains("dev"));
             telescope(streamPathToStr(getCurrentPath().getParent(), filter).toList(), line -> {
-                setCurrentDir(line.getContent());
+                setCurrentDir(Path.of(line.getContent()));
             });
             return null;
         });
@@ -367,42 +363,39 @@ public class VKeyMaps {
         //telescope to show the recent files.
         //TODO
         tm.putKeyMap(VimMode.COMMAND, "<leader>flf", "find recently changed files", s -> {
-            //based on time range: find ./ -maxdepth 3 -type f -mtime -5
-            //sorts: find ./ -type f -exec stat -c "%Y %n" {} + | sort -k1n
-            //best so far: find . -type f -name "*.txt" -print0 | xargs -0 ls -t
-            List<String> options = sb.exec("find", getCurrentPath().toAbsolutePath().toString(), "-type f", "-print0",
+            /*List<String> options = sb.exec("find", getCurrentPath().toAbsolutePath().toString(), "-type f", "-print0",
                     "| xargs -0 ls " +
                             "-t");
             telescope(options, lineResult -> {
-                harpoons.add(Harpoons.CLIPBOARD, lineResult.getContent());
-            });
+                harpoons.getClipboard().add(lineResult.getContent());
+            });*/
             return null;//no mapping
         });
         tm.putKeyMap(VimMode.COMMAND, "<leader>fb", "find buffer", s -> {
-            telescope(vimEng.getView().getBufferFilenames(), lineResult -> {
+            /*telescope(vimEng.getView().getBufferFilenames(), lineResult -> {
                 harpoons.add(Harpoons.CLIPBOARD, lineResult.getContent());
-            });
+            });*/
             return null;//no mapping
         });
         tm.putKeyMap(VimMode.COMMAND, "<leader>gl", "list git branches", s -> {
-            telescope(sb.exec("git", "branch", "-a"), lineResult -> {
+            /*telescope(sb.exec("git", "branch", "-a"), lineResult -> {
                 //TODO use git clipboard
                 harpoons.add(Harpoons.CLIPBOARD, lineResult.getContent());
-            });
+            });*/
             return null;//no mapping
         });
         tm.putKeyMap(VimMode.COMMAND, "<leader>gsha", "get latest SHA of git branch", s -> {
-            telescope(sb.exec("git", "log", "-n", "1"), lineResult -> {
+            /*telescope(sb.exec("git", "log", "-n", "1"), lineResult -> {
                 //TODO use latest git sha var or clipboard?
                 harpoons.add(Harpoons.CLIPBOARD, lineResult.getContent());
-            });
+            });*/
             return null;//no mapping
         });
         tm.putKeyMap(VimMode.COMMAND, "<leader>gl", "list git branches", s -> {
-            telescope(sb.exec("git", "branch", "-a"), lineResult -> {
+            /*telescope(sb.exec("git", "branch", "-a"), lineResult -> {
                 //TODO use latest git sha var or clipboard?
                 harpoons.add(Harpoons.CLIPBOARD, lineResult.getContent());
-            });
+            });*/
             return null;//no mapping
         });
 
@@ -415,9 +408,9 @@ public class VKeyMaps {
             return null;//no mapping
         });
         tm.putKeyMap(VimMode.COMMAND, "<leader>hl", "list harpoon files", s -> {
-            telescope(harpoons.get(Harpoons.FILES).list(), line -> {
+            /*telescope(harpoons.getFiles().list(), line -> {
                 //TODO navigate to file
-            });
+            });*/
             return null;//no mapping
         });
         /*
@@ -429,19 +422,19 @@ public class VKeyMaps {
          */
         tm.putKeyMap(VimMode.COMMAND, "<leader>ha", "add file/buffer to harpoon", s -> {
             //Would love it to popup an editable version... I like the zindex idea again.
-            harpoons.get(Harpoons.FILES).add(vimEng.getActiveBuf().getFilename());
+            harpoons.getFiles().add(Path.of(vimEng.getActiveBuf().getFilename()));
             return null;//no mapping
         });
         tm.putKeyMap(VimMode.COMMAND, "<leader>hc", "clear harpoon list", s -> {
-            harpoons.get(Harpoons.FILES).clear();
+            //harpoons.get(Harpoons.FILES).clear();
             return null;//no mapping
         });
-        tm.putKeyMap(VimMode.COMMAND, "<leader>hn", "switch to next file in list", s ->
+        /*tm.putKeyMap(VimMode.COMMAND, "<leader>hn", "switch to next file in list", s ->
                 ":e " + harpoons.get(Harpoons.FILES).next()
         );
         tm.putKeyMap(VimMode.COMMAND, "<leader>hp", "switch to prev file in list", s ->
                 ":e " + harpoons.get(Harpoons.FILES).prev()
-        );
+        );*/
         tm.putKeyMap(VimMode.COMMAND, "<leader>ec", "create file (think echelon shhh)",
                 s -> {
                     //TODO
@@ -489,7 +482,7 @@ public class VKeyMaps {
                 });
         tm.putKeyMap(List.of(VimMode.INSERT, VimMode.COMMAND), "<c-d><c-u>", "go up a directory (global)",
                 s -> {
-                    harpoons.get(Harpoons.DIRS).current();
+                    harpoons.getDirs().current();
                     return null;//no mapping
                 });
         tm.putKeyMap(VimMode.COMMAND, "<leader>vl", "see/find all current variables", s -> {
@@ -500,7 +493,6 @@ public class VKeyMaps {
         });
         tm.putKeyMap(List.of(VimMode.INSERT), "<leader>", "desc", s -> {
             vimEng.writeBuf(" ");
-            System.out.println("Typed a space!");
             return null;//no mapping
         });
         tm.putKeyMap(VimMode.COMMAND, "n", "desc", s -> {
@@ -553,12 +545,12 @@ public class VKeyMaps {
         });*/
     }
 
-    private void setCurrentDir(String dir) {
-        harpoons.get(Harpoons.DIRS).setCurrent(dir);
+    private void setCurrentDir(Path dir) {
+        harpoons.getDirs().setCurrent(dir);
     }
 
     private Path getCurrentPath() {
-        return Path.of(harpoons.get(Harpoons.DIRS).current());
+        return harpoons.getDirs().current();
     }
 
     private void telescope(List<String> options, Consumer<Line> consumer) {

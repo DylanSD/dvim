@@ -13,6 +13,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import com.catppuccin.Palette;
 import com.dksd.dvim.buffer.Buf;
@@ -57,6 +58,8 @@ public class View {
     private JavaSyntaxHighlighter syntaxHighlighter = new JavaSyntaxHighlighter();
     private final LinkedBlockingQueue<Future<?>> futures = new LinkedBlockingQueue<>();
     private Line tabComplete;
+    private AtomicLong lastDrawn = new AtomicLong();
+    private AtomicInteger lastHashDrawn = new AtomicInteger();
 
     public View(String viewName, TerminalScreen screen, ExecutorService executor) {
         this.name = viewName;
@@ -203,14 +206,18 @@ public class View {
         return activeBufNo.get();
     }
 
-
-
     public Buf getBuffer(Integer bufNo) {
         return buffers.get(bufNo);
     }
 
     public void draw(TerminalScreen screen) {
         long st = System.currentTimeMillis();
+
+        int viewHash = hashCode();
+        if (lastHashDrawn.get() == viewHash) {//we're good
+            return;
+        }
+
         futures.clear();
 
         screen.doResizeIfNecessary();
@@ -250,6 +257,8 @@ public class View {
 
             //terminal.setForegroundColor(new TextColor.RGB(mochaBaseRGB[0], mochaBaseRGB[1], mochaBaseRGB[2]));
             screen.refresh();
+            lastDrawn.set(System.currentTimeMillis());
+            lastHashDrawn.set(viewHash);
         } catch (Exception ep) {
             ep.printStackTrace();
         }
