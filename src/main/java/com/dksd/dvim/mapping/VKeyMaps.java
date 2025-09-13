@@ -22,7 +22,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
 
 import static com.dksd.dvim.utils.PathHelper.getCurrentDir;
@@ -32,8 +31,8 @@ import static com.dksd.dvim.view.View.SIDE_BUFFER;
 
 public class VKeyMaps {
 
-    private final VimEng vimEng;
     private Logger logger = LoggerFactory.getLogger(VKeyMaps.class);
+    private final VimEng vimEng;
     private final TrieMapManager tm;
     private final ScriptBuilder sb = new ScriptBuilder();
     private final Harpoons harpoons = new Harpoons();
@@ -194,7 +193,7 @@ public class VKeyMaps {
             //So I can have context
             Buf activeBuf = vimEng.getActiveBuf();
             tabCompletion.handleTabComplete(
-                    List.of("optione one", "two", "three"),
+                    List.of("option one", "two", "three"),
                     vimEng,
                     lineResult -> {
                         //TODO can move back a word
@@ -203,7 +202,6 @@ public class VKeyMaps {
             return null;//no mapping
         }, true);
         tm.putKeyMap(List.of(VimMode.COMMAND, VimMode.INSERT), "<leader>m", "call mercury llm", s -> {
-
             chatMercuryModel.chat("Can you review the text that follows and offer suggestions?: " +
                             vimEng.getActiveBuf().getLinesAsStr(),
                     vimEng.getView().getBufferByName(View.SIDE_BUFFER));
@@ -560,7 +558,7 @@ public class VKeyMaps {
     private Telescope<Line> telescopeLine(List<Line> options, Consumer<Line> resultConsumer) {
         Telescope<Line> telescope = new Telescope<>(vimEng);
         telescope.setOptions(options);
-        telescope.setOptionToStrFunc(Line::toString);
+        telescope.setOptionToStrFunc(str -> str.getContent() + ((str.getGhostContent() != null) ? " - " + str.getGhostContent() : ""));
         telescope.setResultConsumer(resultConsumer);
         telescope.setOnEnterFunc(tele -> {
             Line selected = tele.getResultsBuf().getCurrentLine();
@@ -583,7 +581,7 @@ public class VKeyMaps {
     private void createSimpleCharMappings() {
         for (int i = 32; i < 127; i++) {
             final String chr = "" + (char) i;
-            tm.putKeyMap(List.of(VimMode.INSERT, VimMode.SEARCH), chr, "simple key mapping",
+            tm.putKeyMap(List.of(VimMode.INSERT, VimMode.SEARCH), chr, "simple insert char key mapping",
                     s -> {
                         vimEng.getActiveBuf().insertIntoLine(chr);
                         return null;//no mapping
