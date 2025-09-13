@@ -25,6 +25,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 import static com.dksd.dvim.utils.PathHelper.getCurrentDir;
+import static com.dksd.dvim.utils.PathHelper.loadFilesIntoBufs;
 import static com.dksd.dvim.utils.PathHelper.streamPathToStr;
 import static com.dksd.dvim.view.View.MAIN_BUFFER;
 import static com.dksd.dvim.view.View.SIDE_BUFFER;
@@ -66,7 +67,7 @@ public class VKeyMaps {
             tm.addStrokeMapping(
                     new KeyStroke(Character.toUpperCase((char) i), false, true, true),
                     "<a-" + chr.toUpperCase() + ">");
-            tm.putKeyMap(List.of(VimMode.INSERT, VimMode.SEARCH), "<s-" + chr.toUpperCase() + ">", "Shift key mapping",
+            tm.putKeyMap(List.of(VimMode.INSERT), "<s-" + chr.toUpperCase() + ">", "Shift key mapping",
                     s -> {
                         vimEng.getActiveBuf().insertIntoLine(chr.toUpperCase());
                         return null;//no mapping
@@ -129,7 +130,8 @@ public class VKeyMaps {
         tm.addStrokeMapping(new KeyStroke(KeyType.PageUp, false, false, false),
                 "<page-up>");
 
-        createSimpleCharMappings();
+        //Key mappings
+        createSimpleCharMappings(List.of(VimMode.INSERT, VimMode.PLANNER));
 
         tm.putKeyMap(VimMode.COMMAND, "h", "Move left", s -> {
             vimEng.moveCursor(0, -1); //left
@@ -147,7 +149,7 @@ public class VKeyMaps {
             vimEng.moveCursor(0, +1); //right
             return null;//no mapping
         }, true);
-        tm.putKeyMap(List.of(VimMode.COMMAND, VimMode.INSERT, VimMode.SEARCH), "<left>", "desc", s -> {
+        tm.putKeyMap(List.of(VimMode.COMMAND, VimMode.INSERT), "<left>", "desc", s -> {
             vimEng.moveCursor(0, -1); //left
             return null;//no mapping
         }, true);
@@ -171,7 +173,7 @@ public class VKeyMaps {
                     });
             return null;//no mapping
         });
-        tm.putKeyMap(List.of(VimMode.COMMAND, VimMode.INSERT, VimMode.SEARCH), "<right>", "desc", s -> {
+        tm.putKeyMap(List.of(VimMode.COMMAND, VimMode.INSERT), "<right>", "desc", s -> {
             vimEng.moveCursor(0, +1); //right
             return null;//no mapping
         }, true);
@@ -286,7 +288,7 @@ public class VKeyMaps {
             System.out.println("Pressed i to go into insert mode");
             return null;//no mapping
         });
-        tm.putKeyMap(List.of(VimMode.COMMAND, VimMode.INSERT, VimMode.SEARCH),
+        tm.putKeyMap(List.of(VimMode.COMMAND, VimMode.INSERT),
                 List.of("<esc>"), "escape from any mode to command mode", s -> {
                     vimEng.setVimMode(VimMode.COMMAND);
                     vimEng.clearKeys();
@@ -294,12 +296,12 @@ public class VKeyMaps {
                     System.out.println("Pressed Esc to go into command mode");
                     return null;//no mapping
                 });
-        tm.putKeyMap(List.of(VimMode.INSERT, VimMode.SEARCH), "<C-[>", "desc", s -> {
+        tm.putKeyMap(List.of(VimMode.INSERT), "<C-[>", "desc", s -> {
             vimEng.setVimMode(VimMode.COMMAND);
             System.out.println("Pressed <C-[> to go into command mode");
             return null;//no mapping
         });
-        tm.putKeyMap(List.of(VimMode.INSERT, VimMode.SEARCH), "<bs>", "desc", s -> {
+        tm.putKeyMap(List.of(VimMode.INSERT), "<bs>", "desc", s -> {
             vimEng.moveCursor(0, -1);
             vimEng.deleteInLine(1);
             vimEng.removeLastKeyStroke();
@@ -541,6 +543,28 @@ public class VKeyMaps {
 
             return null;//no mapping
         });*/
+
+        tm.putKeyMap(VimMode.PLANNER, "<leader>lp", "load planner", s -> {
+            //loadFilesIntoBufs()
+            //set vimmodePlanner
+            //TODO
+            return null;//no mapping
+        });
+        tm.putKeyMap(List.of(VimMode.INSERT, VimMode.COMMAND, VimMode.PLANNER), "<leader>runp", "run planner", s -> {
+
+            //TODO
+            return null;//no mapping
+        });
+        tm.putKeyMap(VimMode.PLANNER, "fp", "fold parent", s -> {
+
+            //TODO
+            return null;//no mapping
+        });
+        tm.putKeyMap(VimMode.PLANNER, "ufp", "un-fold parent", s -> {
+
+            //TODO
+            return null;//no mapping
+        });
     }
 
     private void setCurrentDir(Path dir) {
@@ -578,10 +602,10 @@ public class VKeyMaps {
         tm.addStrokeMapping(new KeyStroke(chr, false, false, true), "" + chr);
     }
 
-    private void createSimpleCharMappings() {
+    private void createSimpleCharMappings(List<VimMode> vimModes) {
         for (int i = 32; i < 127; i++) {
             final String chr = "" + (char) i;
-            tm.putKeyMap(List.of(VimMode.INSERT, VimMode.SEARCH), chr, "simple insert char key mapping",
+            tm.putKeyMap(vimModes, chr, "simple insert char key mapping",
                     s -> {
                         vimEng.getActiveBuf().insertIntoLine(chr);
                         return null;//no mapping

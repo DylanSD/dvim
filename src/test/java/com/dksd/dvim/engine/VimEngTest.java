@@ -63,11 +63,6 @@ public class VimEngTest {
     }
 
     @Test
-    public void testWriteBuf() {
-        // Test writeBuf method
-    }
-
-    @Test
     public void testMoveCursorByBufNo() {
         // Test moveCursor by bufNo method
     }
