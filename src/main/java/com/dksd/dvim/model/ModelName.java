@@ -10,7 +10,7 @@ public enum ModelName {
         this.modelName = modelName;
     }
 
-    public String getMdoelName() {
+    public String getModelName() {
         return modelName;
     }
 }

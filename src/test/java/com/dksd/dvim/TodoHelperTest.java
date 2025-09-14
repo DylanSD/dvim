@@ -14,9 +14,12 @@ class TodoHelperTest {
     @Test
     void moveTodoUpVim_simpleTopLevel() {
         List<String> buffer = Arrays.asList(
-                "- Task A",
-                "- Task B",
-                "- Task C"
+                "Task A",
+                "  Task B",
+                "    Task C",
+                "Task 1",
+                "  Task 2",
+                "    Task 3"
         );
 
         // Move "Task B" (index 1) up → should move above Task A

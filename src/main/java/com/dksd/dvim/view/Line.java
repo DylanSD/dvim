@@ -8,6 +8,7 @@ public class Line {
     private volatile String content;
     private volatile String ghostContent;
     private volatile String indicatorStr = null;
+    //TODO Folding?
 
     public Line(int lineNumber, String content, String indicatorStr) {
         this.lineNumber = lineNumber;
