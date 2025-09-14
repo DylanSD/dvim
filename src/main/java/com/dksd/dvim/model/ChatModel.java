@@ -27,7 +27,7 @@ public class ChatModel {
         model = OpenAiStreamingChatModel.builder()
                 .apiKey(INCEPTION_API_KEY)
                 .baseUrl("https://api.inceptionlabs.ai/v1")
-                .modelName(modelName.getMdoelName())
+                .modelName(modelName.getModelName())
                 .timeout(Duration.ofSeconds(10))
                 .maxTokens(512)
                 .build();
