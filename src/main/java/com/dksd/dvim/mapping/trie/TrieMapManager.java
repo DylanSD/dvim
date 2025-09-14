@@ -1,5 +1,6 @@
 package com.dksd.dvim.mapping.trie;
 
+import com.dksd.dvim.engine.VimEng;
 import com.dksd.dvim.mapping.VimKey;
 import com.dksd.dvim.view.VimMode;
 import com.googlecode.lanterna.input.KeyStroke;
@@ -19,12 +20,14 @@ public class TrieMapManager {
     private final Map<VimMode, Trie> mappings = new ConcurrentHashMap<>();
     private Set<TrieNode> remappedNodes = new HashSet<>();
     private List<TrieNode> prevExecFunctionNodes = new ArrayList<>();
+    private Map<List<VimKey>, String> cachedToVim = new ConcurrentHashMap<>();
 
-    public TrieNode mapRecursively(VimMode vimMode, List<VimKey> keyStrokes) {
+    public TrieNode mapRecursively(VimEng vimEng, VimMode vimMode, List<VimKey> keyStrokes) {
         if (keyStrokes == null) {
             return null;
         }
         String keyStrokesStr = toVim(keyStrokes);
+        vimEng.updateStatusBuffer(keyStrokesStr);
         TrieNode foundNode = mappings.get(vimMode).find(keyStrokesStr);
         if (foundNode == null) {
             return null;
@@ -136,11 +139,15 @@ public class TrieMapManager {
     }
 
     public String toVim(List<VimKey> keyStrokes) {
+        if (cachedToVim.containsKey(keyStrokes)) {
+            return cachedToVim.get(keyStrokes);
+        }
         StringBuffer sb = new StringBuffer();
         for (VimKey keyStroke : keyStrokes) {
             sb.append(keyStrokeToStringMapping.get(keyStroke.getKeyStroke()));
         }
         String ret = sb.toString();
+        cachedToVim.put(keyStrokes, ret);
         return ret;
     }
 

@@ -215,7 +215,7 @@ public class View {
 
         int viewHash = hashCode();
         if (lastHashDrawn.get() == viewHash) {//we're good
-            return;
+//            return;
         }
 
         futures.clear();

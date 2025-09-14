@@ -10,9 +10,9 @@ public class SFormatter {
         return ans;
     }
 
-    public static String format(String str, String vimMode, List<KeyStroke> keyStrokes) {
+    public static String format(String str, String vimMode, String keyStrokes) {
         String ans = str.replace("{{status}}", vimMode);
-        ans = ans.replace("{{keys}}", keyStrokes.toString());
+        ans = ans.replace("{{keys}}", keyStrokes);
         return ans;
     }
 }

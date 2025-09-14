@@ -94,7 +94,7 @@ public class Main {
             VimEng ve = new VimEng(screen, threadPool, trieMapManager);
             vKeyMaps.loadKeys(ve, trieMapManager);
 
-            ve.updateStatusBuffer();
+            ve.updateStatusBuffer("");
             /*
             You can attach a resize listener to your Terminal object, which will invoke a callback method (usually on a
             separate thread) when it is informed of the terminal emulator window changing size. Notice that maybe not
@@ -110,7 +110,6 @@ public class Main {
                 //textGraphics.putString(5 + "Terminal Size: ".length(), 3, newSize.toString());
                 //textGraphics.putString(5 + "Terminal Size: ".length(), 3, newSize.toString());
                 ve.getView().fitScrollView(newSize.getColumns(), newSize.getRows());
-                //ve.getView().draw(screen);
             });
 
             ///textGraphics.putString(5, 4, "Last Keystroke: ", SGR.BOLD);
@@ -130,15 +129,11 @@ public class Main {
             KeyType, while regular alphanumeric and symbol keys are all under KeyType.Character. Notice that tab and
             enter are not considered KeyType.Character but special types (KeyType.Tab and KeyType.Enter respectively)
              */
-            long lastkeyTime = 0;
+
             do {
                 KeyStroke key = screen.readInput();
                 if (key != null) {
                     ve.handleKey(key);
-                    if (key.getEventTime() - lastkeyTime > 2) {
-                        ve.getView().draw(screen);
-                    }
-                    lastkeyTime = key.getEventTime();
                 }
             } while (true); //the engine will exit via a System.exit
 

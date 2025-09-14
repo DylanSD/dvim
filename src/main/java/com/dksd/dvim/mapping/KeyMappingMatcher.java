@@ -1,9 +1,11 @@
 package com.dksd.dvim.mapping;
 
+import com.dksd.dvim.engine.VimEng;
 import com.dksd.dvim.mapping.trie.TrieMapManager;
 import com.dksd.dvim.mapping.trie.TrieNode;
 import com.dksd.dvim.view.VimMode;
 import com.googlecode.lanterna.input.KeyStroke;
+import com.googlecode.lanterna.input.KeyType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,39 +23,41 @@ public class KeyMappingMatcher {
     }
 
     // Every match call will return the future that completes after 50ms
-    public CompletableFuture<TrieNode> match(VimMode vimMode, KeyStroke key) {
+    public CompletableFuture<TrieNode> match(VimEng vimEng, VimMode vimMode, KeyStroke key) {
         keyStrokes.add(new VimKey(vimMode, key));
+        CompletableFuture<TrieNode> resultFuture = new CompletableFuture<>();
 
-        // Cancel any previously scheduled match
         if (pendingTask != null && !pendingTask.isDone()) {
             pendingTask.cancel(false);
         }
 
-        // Prepare a new future
-        CompletableFuture<TrieNode> resultFuture = new CompletableFuture<>();
-
-        // Schedule the task exactly 50ms later
-        pendingTask = scheduler.schedule(() -> {
-            try {
-                List<VimKey> keys = new ArrayList<>(keyStrokes.size());
-                keyStrokes.drainTo(keys);
-                TrieNode foundNode =
-                        trieMapManager.mapRecursively(vimMode, keys);
-                resultFuture.complete(foundNode);
-            } catch (Exception e) {
-                resultFuture.completeExceptionally(e);
-            }
-        }, 50, TimeUnit.MILLISECONDS);
-
+        if (key.getKeyType().equals(KeyType.Character) &&
+                keyStrokes.peek() != null &&
+                keyStrokes.peek().getKeyStroke().getCharacter() == ' ') {
+            pendingTask = scheduler.schedule(() -> {
+                try {
+                    executeMapping(vimEng, vimMode, keyStrokes, resultFuture);
+                } catch (Exception e) {
+                    resultFuture.completeExceptionally(e);
+                }
+            }, 50, TimeUnit.MILLISECONDS);
+        } else {
+            executeMapping(vimEng, vimMode, keyStrokes, resultFuture);
+        }
         return resultFuture;
+    }
+
+    private void executeMapping(VimEng vimEng,
+                                VimMode vimMode,
+                                LinkedBlockingQueue<VimKey> keyStrokes,
+                                CompletableFuture<TrieNode> future) {
+        List<VimKey> keys = new ArrayList<>(keyStrokes.size());
+        keyStrokes.drainTo(keys);
+        future.complete(trieMapManager.mapRecursively(vimEng, vimMode, keys));
     }
 
     public void shutdown() {
         scheduler.shutdownNow();
-    }
-
-    public List<KeyStroke> getKeyStrokesAsList() {
-        return keyStrokes.stream().map(VimKey::getKeyStroke).toList();
     }
 
     public TrieMapManager getTrieMapManager() {
