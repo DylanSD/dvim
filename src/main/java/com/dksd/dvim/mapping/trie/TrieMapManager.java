@@ -1,5 +1,6 @@
 package com.dksd.dvim.mapping.trie;
 
+import com.dksd.dvim.buffer.Buf;
 import com.dksd.dvim.engine.VimEng;
 import com.dksd.dvim.mapping.VimKey;
 import com.dksd.dvim.view.VimMode;
@@ -22,12 +23,12 @@ public class TrieMapManager {
     private List<TrieNode> prevExecFunctionNodes = new ArrayList<>();
     private Map<List<VimKey>, String> cachedToVim = new ConcurrentHashMap<>();
 
-    public TrieNode mapRecursively(VimEng vimEng, VimMode vimMode, List<VimKey> keyStrokes) {
+    public TrieNode mapRecursively(Buf statusBuf, VimMode vimMode, List<VimKey> keyStrokes) {
         if (keyStrokes == null) {
             return null;
         }
         String keyStrokesStr = toVim(keyStrokes);
-        vimEng.updateStatusBuffer(keyStrokesStr);
+        statusBuf.updateStatusBuffer(vimMode, keyStrokesStr);
         TrieNode foundNode = mappings.get(vimMode).find(keyStrokesStr);
         if (foundNode == null) {
             return null;

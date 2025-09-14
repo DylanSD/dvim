@@ -1,5 +1,6 @@
 package com.dksd.dvim.mapping;
 
+import com.dksd.dvim.buffer.Buf;
 import com.dksd.dvim.engine.VimEng;
 import com.dksd.dvim.mapping.trie.TrieMapManager;
 import com.dksd.dvim.mapping.trie.TrieNode;
@@ -23,7 +24,7 @@ public class KeyMappingMatcher {
     }
 
     // Every match call will return the future that completes after 50ms
-    public CompletableFuture<TrieNode> match(VimEng vimEng, VimMode vimMode, KeyStroke key) {
+    public CompletableFuture<TrieNode> match(Buf statusBuf, VimMode vimMode, KeyStroke key) {
         keyStrokes.add(new VimKey(vimMode, key));
         CompletableFuture<TrieNode> resultFuture = new CompletableFuture<>();
 
@@ -36,24 +37,24 @@ public class KeyMappingMatcher {
                 keyStrokes.peek().getKeyStroke().getCharacter() == ' ') {
             pendingTask = scheduler.schedule(() -> {
                 try {
-                    executeMapping(vimEng, vimMode, keyStrokes, resultFuture);
+                    executeMapping(statusBuf, vimMode, keyStrokes, resultFuture);
                 } catch (Exception e) {
                     resultFuture.completeExceptionally(e);
                 }
             }, 50, TimeUnit.MILLISECONDS);
         } else {
-            executeMapping(vimEng, vimMode, keyStrokes, resultFuture);
+            executeMapping(statusBuf, vimMode, keyStrokes, resultFuture);
         }
         return resultFuture;
     }
 
-    private void executeMapping(VimEng vimEng,
+    private void executeMapping(Buf statusBuf,
                                 VimMode vimMode,
                                 LinkedBlockingQueue<VimKey> keyStrokes,
                                 CompletableFuture<TrieNode> future) {
         List<VimKey> keys = new ArrayList<>(keyStrokes.size());
         keyStrokes.drainTo(keys);
-        future.complete(trieMapManager.mapRecursively(vimEng, vimMode, keys));
+        future.complete(trieMapManager.mapRecursively(statusBuf, vimMode, keys));
     }
 
     public void shutdown() {

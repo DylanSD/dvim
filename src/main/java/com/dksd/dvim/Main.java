@@ -73,7 +73,7 @@ public class Main {
             VimEng ve = new VimEng(screen, threadPool, trieMapManager);
             vKeyMaps.loadKeys(ve, trieMapManager);
 
-            ve.updateStatusBuffer("");
+            //ve.updateStatusBuffer("");
             screen.getTerminal().addResizeListener((terminal1, newSize) -> {
                 ve.getView().fitScrollView(newSize.getColumns(), newSize.getRows());
             });

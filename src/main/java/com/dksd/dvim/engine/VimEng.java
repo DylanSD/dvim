@@ -126,11 +126,6 @@ public class VimEng {
         vimMode.set(vimModeIn);
     }
 
-    public void updateStatusBuffer(String keys) {
-        String ans = SFormatter.format("MODE: {{status}} Keys: {{keys}}", vimMode.toString(), keys);
-        getView().getBufferByName(View.STATUS_BUFFER).setLines(List.of(Line.of(0, ans, null)));
-    }
-
 //    private void setCol(int col) {
 //        getView().getBuffer(getView().getActiveBufNo()).setCol(col);
 //    }
@@ -259,7 +254,7 @@ public class VimEng {
     }
 
     public void handleKey(KeyStroke key) {
-        keyMappingMatcher.match(this, getVimMode(), key);
+        keyMappingMatcher.match(getView().getBufferByName(View.STATUS_BUFFER), getVimMode(), key);
     }
 }
 

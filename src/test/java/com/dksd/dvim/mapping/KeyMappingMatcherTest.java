@@ -1,5 +1,6 @@
 package com.dksd.dvim.mapping;
 
+import com.dksd.dvim.buffer.Buf;
 import com.dksd.dvim.mapping.trie.TrieMapManager;
 import com.dksd.dvim.mapping.trie.TrieNode;
 import com.dksd.dvim.view.VimMode;
@@ -29,6 +30,7 @@ class KeyMappingMatcherTest {
 
     @Test
     void matchExactMapping() throws ExecutionException, InterruptedException {
+        Buf statusBuf = new Buf(null, null, -1, null, null, false);
         KeyStroke aStroke = new KeyStroke('a', false, false, false);
         KeyStroke leader = new KeyStroke(' ', false, false, false);
         KeyStroke bStroke = new KeyStroke('b', false, false, false);
@@ -37,10 +39,10 @@ class KeyMappingMatcherTest {
         matcher.getTrieMapManager().addStrokeMapping(leader, "<leader>");
         matcher.getTrieMapManager().addStrokeMapping(bStroke, "b");
         matcher.getTrieMapManager().addStrokeMapping(cStroke, "c");
-        CompletableFuture<TrieNode> future = matcher.match(VimMode.COMMAND, aStroke);
-        future = matcher.match(VimMode.COMMAND, leader);
-        future = matcher.match(VimMode.COMMAND, bStroke);
-        future = matcher.match(VimMode.COMMAND, cStroke);
+        CompletableFuture<TrieNode> future = matcher.match(statusBuf, VimMode.COMMAND, aStroke);
+        future = matcher.match(statusBuf, VimMode.COMMAND, leader);
+        future = matcher.match(statusBuf, VimMode.COMMAND, bStroke);
+        future = matcher.match(statusBuf, VimMode.COMMAND, cStroke);
         TrieNode result = future.get();
         assertEquals("<leader>bc", result.getLeft(), "Should match the '<leader>bc' mapping");
 

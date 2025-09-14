@@ -15,15 +15,15 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import com.dksd.dvim.utils.LinesHelper;
+import com.dksd.dvim.utils.SFormatter;
 import com.dksd.dvim.view.DispObj;
 import com.dksd.dvim.event.EventType;
 import com.dksd.dvim.event.VimEvent;
 import com.dksd.dvim.view.Line;
 import com.dksd.dvim.view.ScrollView;
+import com.dksd.dvim.view.VimMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -455,5 +455,10 @@ public class Buf {
 
     public String getLinesAsStr() {
         return lines.getLinesAsStr();
+    }
+
+    public void updateStatusBuffer(VimMode vimMode, String keys) {
+        String ans = SFormatter.format("MODE: {{status}} Keys: {{keys}}", vimMode.toString(), keys);
+        setLines(List.of(Line.of(0, ans, null)));
     }
 }
