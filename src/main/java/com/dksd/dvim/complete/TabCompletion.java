@@ -45,7 +45,7 @@ public class TabCompletion {
         tabBuf.setLinesListStr(options);
         moveArrowInResults(tabBuf, 0, ROW_INDICATOR);
 
-        TrieMapManager tm = vimEng.getKeyMaps().getTrieManager();
+        TrieMapManager tm = vimEng.getKeyMappingMatcher().getTrieMapManager();
         tm.reMap(List.of(VimMode.INSERT, VimMode.COMMAND),
                 "<up>",
                 "move selection up",

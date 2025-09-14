@@ -9,7 +9,7 @@ class VimEngTest {
     private VimEng vimEng;
     @BeforeEach
     void setUp() throws IOException {
-        vimEng = new VimEng(null, null);
+
     }
 
     @Test

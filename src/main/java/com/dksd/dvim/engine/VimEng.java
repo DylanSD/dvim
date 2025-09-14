@@ -1,31 +1,30 @@
 package com.dksd.dvim.engine;
 
 import com.dksd.dvim.buffer.Buf;
+import com.dksd.dvim.mapping.KeyMappingMatcher;
 import com.dksd.dvim.mapping.VKeyMaps;
 import com.dksd.dvim.mapping.trie.TrieMapManager;
-import com.dksd.dvim.mapping.trie.TrieNode;
 import com.dksd.dvim.utils.SFormatter;
 import com.dksd.dvim.view.Line;
 import com.dksd.dvim.view.View;
 import com.dksd.dvim.view.VimMode;
 import com.googlecode.lanterna.input.KeyStroke;
-import com.googlecode.lanterna.input.KeyType;
 import com.googlecode.lanterna.screen.TerminalScreen;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 public class VimEng {
     private Logger logger = LoggerFactory.getLogger(VimEng.class);
@@ -33,29 +32,31 @@ public class VimEng {
     public static final String TELESCOPE_VIEW = "tele_view";
     private Map<String, View> views = new ConcurrentHashMap<>();
     private AtomicReference<VimMode> vimMode = new AtomicReference<>(VimMode.COMMAND);
-    private List<KeyStroke> keyStrokes = Collections.synchronizedList(new ArrayList<>());
     private TerminalScreen terminalScreen;
     private final ExecutorService threadPool;
     private final ScheduledExecutorService newScheduledThread = Executors.newSingleThreadScheduledExecutor();
-    private AtomicLong lastClearKeys = new AtomicLong();
     private AtomicReference<String> activeView = new AtomicReference<>(START_VIEW);
-    private VKeyMaps vKeyMaps;
+    private CopyOnWriteArrayList<Consumer<VimEng>> backgroundTasks = new CopyOnWriteArrayList<>();
+    private KeyMappingMatcher keyMappingMatcher;
 
-    public VimEng(TerminalScreen screen, ExecutorService threadPool) {
+    public VimEng(TerminalScreen screen,
+                  ExecutorService threadPool,
+                  TrieMapManager trieMapManager) {
         terminalScreen = screen;
         this.threadPool = threadPool;
         views.put(START_VIEW, new View(START_VIEW, screen, threadPool));
         views.put(TELESCOPE_VIEW, new View(TELESCOPE_VIEW, screen, threadPool));
+        keyMappingMatcher = new KeyMappingMatcher(trieMapManager);
+        addBackgroundTask(ve -> ve.getView().draw(terminalScreen));
         newScheduledThread.scheduleWithFixedDelay(() -> {
-            long st = System.currentTimeMillis();
-            getView().draw(terminalScreen);
-            logger.info("Trigger hash key change draw: " + st);
-            if (st - lastClearKeys.get() > 1000) {
-                //TODO cant debug with this
-                //VimEng.clearKeys();
-                lastClearKeys.set(st);
+            for (Consumer<VimEng> backgroundTask : backgroundTasks) {
+                backgroundTask.accept(this);
             }
         }, 10, 20, TimeUnit.MILLISECONDS);
+    }
+
+    public void addBackgroundTask(Consumer<VimEng> task) {
+        backgroundTasks.add(task);
     }
 
     public View getView() {
@@ -70,13 +71,13 @@ public class VimEng {
         return getBuffer(getActiveBufNo());
     }
 
-    public void removeLastKeyStroke() {
-        int last = keyStrokes.size() - 1;
-        while (!keyStrokes.isEmpty() && keyStrokes.get(last).getKeyType().equals(KeyType.Backspace)) {
-            keyStrokes.remove(last);
-            last = keyStrokes.size() - 1;
-        }
-    }
+//    public void removeLastKeyStroke() {
+//        int last = keyStrokes.size() - 1;
+//        while (!keyStrokes.isEmpty() && keyStrokes.get(last).getKeyType().equals(KeyType.Backspace)) {
+//            keyStrokes.remove(last);
+//            last = keyStrokes.size() - 1;
+//        }
+//    }
 
     public void stop() {
         threadPool.shutdownNow();
@@ -121,18 +122,13 @@ public class VimEng {
         return Arrays.copyOfRange(tokens, 1, tokens.length);
     }
 
-    public void clearKeys() {
-        keyStrokes.clear();
-    }
-
     public void setVimMode(VimMode vimModeIn) {
         vimMode.set(vimModeIn);
-        System.out.println("Setting vimMode: " + vimModeIn);
-        updateStatus();
+        updateStatusBuffer();
     }
 
-    public void updateStatus() {
-        String ans = SFormatter.format("MODE: {{status}} Keys: {{keys}}", getVimMode().toString(), keyStrokes);
+    public void updateStatusBuffer() {
+        String ans = SFormatter.format("MODE: {{status}} Keys: {{keys}}", vimMode.toString(), keyMappingMatcher.getKeyStrokesAsList());
         getView().getBufferByName(View.STATUS_BUFFER).setLines(List.of(Line.of(0, ans, null)));
     }
 
@@ -247,31 +243,6 @@ public class VimEng {
         getView().getBuffer(getView().getActiveBufNo()).setLine(row, line);
     }
 
-    List<TrieNode> foundNodes = new ArrayList<>();
-    public void handleKey(TrieMapManager trieMapManager, KeyStroke key) {
-        if (key.getKeyType().equals(KeyType.EOF)) {
-            System.exit(0);
-        }
-        lastClearKeys.set(System.currentTimeMillis());
-        if (key.getKeyType().equals(KeyType.Escape)) {
-            keyStrokes.clear();
-        }
-
-        keyStrokes.add(key);
-        updateStatus();
-        String vimCommands = trieMapManager.toVim(keyStrokes);
-        foundNodes.clear();
-        trieMapManager.mapRecursively(foundNodes, 0, vimMode.get(), vimCommands);
-        if (foundNodes == null) {
-            System.out.println("Did not find a command to run: " + vimCommands);
-        } else if (!foundNodes.isEmpty() && foundNodes.getFirst().isCompleteWord()) {
-            keyStrokes.clear();
-            //System.out.println("found and executed mapping and cleared keystrokes: " + vimCommands);
-        } else {
-            System.out.println("Not found a command not sure why: " + vimCommands);
-        }
-    }
-
     public void loadFile(Buf buf, String fileName) {
 
     }
@@ -284,12 +255,12 @@ public class VimEng {
         getView(TELESCOPE_VIEW).reset();
     }
 
-    public void setKeyMaps(VKeyMaps vKeyMaps) {
-        this.vKeyMaps = vKeyMaps;
+    public KeyMappingMatcher getKeyMappingMatcher() {
+        return keyMappingMatcher;
     }
 
-    public VKeyMaps getKeyMaps() {
-        return vKeyMaps;
+    public void handleKey(KeyStroke key) {
+        keyMappingMatcher.match(getVimMode(), key);
     }
 }
 

@@ -1,9 +1,11 @@
 package com.dksd.dvim.mapping.trie;
 
+import com.dksd.dvim.mapping.VimKey;
 import com.dksd.dvim.view.VimMode;
 import com.googlecode.lanterna.input.KeyStroke;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -18,22 +20,24 @@ public class TrieMapManager {
     private Set<TrieNode> remappedNodes = new HashSet<>();
     private List<TrieNode> prevExecFunctionNodes = new ArrayList<>();
 
-    public void mapRecursively(List<TrieNode> nodes, int depth, VimMode vimMode, String keyStrokes) {
-        if (keyStrokes == null || depth > 10) {
-            return;
+    public TrieNode mapRecursively(VimMode vimMode, List<VimKey> keyStrokes) {
+        if (keyStrokes == null) {
+            return null;
         }
-        TrieNode foundNode = mappings.get(vimMode).find(keyStrokes);
+        String keyStrokesStr = toVim(keyStrokes);
+        TrieNode foundNode = mappings.get(vimMode).find(keyStrokesStr);
         if (foundNode == null) {
-            return;
+            return null;
         }
-        nodes.add(foundNode);
+        //foundNodesResponse.add(foundNode);
         if (foundNode.isCompleteWord()) {
-            String funcResult = foundNode.getLastFunc().apply(keyStrokes);
-            if (!".".equals(keyStrokes)) {
+            String funcResult = foundNode.getLastFunc().apply(keyStrokesStr);
+            if (!".".equals(keyStrokesStr)) {
                 prevExecFunctionNodes.addFirst(foundNode);
             }
-            mapRecursively(nodes, depth + 1, vimMode, funcResult);
+            //mapRecursively(foundNodesResponse, depth + 1, vimMode, funcResult);
         }
+        return foundNode;
     }
 
     public void reMap(List<VimMode> vimModes, String left, String desc, Function<String, String> remapFunc, boolean hideMapping) {
@@ -131,10 +135,10 @@ public class TrieMapManager {
         return prevExecFunctionNodes;
     }
 
-    public String toVim(List<KeyStroke> keyStrokes) {
+    public String toVim(List<VimKey> keyStrokes) {
         StringBuffer sb = new StringBuffer();
-        for (KeyStroke keyStroke : keyStrokes) {
-            sb.append(keyStrokeToStringMapping.get(keyStroke));
+        for (VimKey keyStroke : keyStrokes) {
+            sb.append(keyStrokeToStringMapping.get(keyStroke.getKeyStroke()));
         }
         String ret = sb.toString();
         return ret;

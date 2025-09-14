@@ -25,7 +25,6 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 import static com.dksd.dvim.utils.PathHelper.getCurrentDir;
-import static com.dksd.dvim.utils.PathHelper.loadFilesIntoBufs;
 import static com.dksd.dvim.utils.PathHelper.streamPathToStr;
 import static com.dksd.dvim.view.View.MAIN_BUFFER;
 import static com.dksd.dvim.view.View.SIDE_BUFFER;
@@ -33,22 +32,18 @@ import static com.dksd.dvim.view.View.SIDE_BUFFER;
 public class VKeyMaps {
 
     private Logger logger = LoggerFactory.getLogger(VKeyMaps.class);
-    private final VimEng vimEng;
-    private final TrieMapManager tm;
     private final ScriptBuilder sb = new ScriptBuilder();
     private final Harpoons harpoons = new Harpoons();
     private ChatModel chatMercuryModel = new ChatModel(ModelName.MERCURY);
     private ChatModel chatMercuryCoderModel = new ChatModel(ModelName.MERCURY_CODER);
 
-    public VKeyMaps(VimEng ve, TrieMapManager tm) {
-        this.vimEng = ve;
-        this.tm = tm;
-        loadVimKeyConverter();
+    public void loadKeys(VimEng vimEng, TrieMapManager tm) {
+        loadVimKeyConverter(vimEng, tm);
         harpoons.getDirs().add(getCurrentDir());
     }
 
     //TODO  read this from configuration file or something
-    private void loadVimKeyConverter() {//VIM conversion only
+    private void loadVimKeyConverter(VimEng vimEng, TrieMapManager tm) {//VIM conversion only
         for (int i = 33; i < 127; i++) {
             final String chr = "" + (char) i;
             tm.addStrokeMapping(new KeyStroke((char) i, false, false, false), chr);
@@ -79,27 +74,27 @@ public class VKeyMaps {
                     new KeyStroke(Character.toUpperCase((char) i), false, true, true),
                     "<sa-" + chr.toUpperCase() + ">");
         }
-        shiftMap('!');
-        shiftMap('@');
-        shiftMap('#');
-        shiftMap('$');
-        shiftMap('%');
-        shiftMap('^');
-        shiftMap('&');
-        shiftMap('*');
-        shiftMap('(');
-        shiftMap(')');
-        shiftMap('_');
-        shiftMap('+');
-        shiftMap('{');
-        shiftMap('}');
-        shiftMap('|');
-        shiftMap('"');
-        shiftMap(':');
-        shiftMap('<');
-        shiftMap('>');
-        shiftMap('?');
-        shiftMap('~');
+        shiftMap(tm, '!');
+        shiftMap(tm, '@');
+        shiftMap(tm, '#');
+        shiftMap(tm, '$');
+        shiftMap(tm, '%');
+        shiftMap(tm, '^');
+        shiftMap(tm, '&');
+        shiftMap(tm, '*');
+        shiftMap(tm, '(');
+        shiftMap(tm, ')');
+        shiftMap(tm, '_');
+        shiftMap(tm, '+');
+        shiftMap(tm, '{');
+        shiftMap(tm, '}');
+        shiftMap(tm, '|');
+        shiftMap(tm, '"');
+        shiftMap(tm, ':');
+        shiftMap(tm, '<');
+        shiftMap(tm, '>');
+        shiftMap(tm, '?');
+        shiftMap(tm, '~');
 
         tm.addStrokeMapping(new KeyStroke(' ', false, false, false), "<leader>");
         tm.addStrokeMapping(new KeyStroke(KeyType.Enter, false, false, false), "<enter>");
@@ -131,7 +126,7 @@ public class VKeyMaps {
                 "<page-up>");
 
         //Key mappings
-        createSimpleCharMappings(List.of(VimMode.INSERT, VimMode.PLANNER));
+        createSimpleCharMappings(vimEng, List.of(VimMode.INSERT, VimMode.PLANNER), tm);
 
         tm.putKeyMap(VimMode.COMMAND, "h", "Move left", s -> {
             vimEng.moveCursor(0, -1); //left
@@ -163,7 +158,7 @@ public class VKeyMaps {
         }, true);
         tm.putKeyMap(VimMode.COMMAND, "/", "search for text and jump to the text", s -> {
             vimEng.setVimMode(VimMode.INSERT);
-            telescope(Line.convertLines(vimEng.getView().getActiveBuf().getLinesDangerous()),
+            telescope(vimEng, tm, Line.convertLines(vimEng.getView().getActiveBuf().getLinesDangerous()),
                     lineResult -> {
                         Buf activeBuf = vimEng.getView().getActiveBuf();
                         int foundRow = lineResult.getLineNumber();
@@ -291,7 +286,6 @@ public class VKeyMaps {
         tm.putKeyMap(List.of(VimMode.COMMAND, VimMode.INSERT),
                 List.of("<esc>"), "escape from any mode to command mode", s -> {
                     vimEng.setVimMode(VimMode.COMMAND);
-                    vimEng.clearKeys();
                     vimEng.cancelTelescope();
                     System.out.println("Pressed Esc to go into command mode");
                     return null;//no mapping
@@ -304,12 +298,13 @@ public class VKeyMaps {
         tm.putKeyMap(List.of(VimMode.INSERT), "<bs>", "desc", s -> {
             vimEng.moveCursor(0, -1);
             vimEng.deleteInLine(1);
-            vimEng.removeLastKeyStroke();
+            //TODO why do we need this?
+            //vimEng.removeLastKeyStroke();
             System.out.println("Backspace pressed");
             return null;//no mapping
         });
         tm.putKeyMap(VimMode.COMMAND, "<leader>ff", "find files", s -> {
-            telescope(streamPathToStr(getCurrentPath(), Files::isRegularFile).toList(),
+            telescope(vimEng, tm, streamPathToStr(getCurrentPath(), Files::isRegularFile).toList(),
                     lineResult -> {
                         vimEng.loadFile(vimEng.getActiveBuf(), lineResult.getContent());
                     });
@@ -320,7 +315,7 @@ public class VKeyMaps {
                     (path.toString().contains("projects") ||
                             path.toString().contains("wtcode") ||
                             path.toString().contains("dev"));
-            telescope(streamPathToStr(getCurrentPath().getParent(), filter).toList(), line -> {
+            telescope(vimEng, tm, streamPathToStr(getCurrentPath().getParent(), filter).toList(), line -> {
                 setCurrentDir(Path.of(line.getContent()));
             });
             return null;
@@ -347,7 +342,7 @@ public class VKeyMaps {
         });
         tm.putKeyMap(VimMode.COMMAND, ":", "open command window", s -> {
             List<String> options = List.of("write", "read", "quit", "find", "grep");
-            telescope(options, lineResult -> vimEng.executeFunction(vimEng.getActiveBuf(), lineResult.getContent()));
+            telescope(vimEng, tm, options, lineResult -> vimEng.executeFunction(vimEng.getActiveBuf(), lineResult.getContent()));
             return null;
         });
         tm.putKeyMap(VimMode.COMMAND, "<leader>fm", "find key mapping", s -> {
@@ -356,7 +351,7 @@ public class VKeyMaps {
             return null;
         });
         tm.putKeyMap(VimMode.COMMAND, "<leader>fh", "find harpoons", s -> {
-            telescope(harpoons.getList(), null);
+            telescope(vimEng, tm, harpoons.getList(), null);
             return null;
         });
         //Be kind cool to show various time options in telescope, then select mapping then another
@@ -575,11 +570,11 @@ public class VKeyMaps {
         return harpoons.getDirs().current();
     }
 
-    private void telescope(List<String> options, Consumer<Line> resultConsumer) {
-        telescopeLine(LinesHelper.convertToLines(options), resultConsumer);
+    private void telescope(VimEng vimEng, TrieMapManager trieMapManager, List<String> options, Consumer<Line> resultConsumer) {
+        telescopeLine(vimEng, trieMapManager, LinesHelper.convertToLines(options), resultConsumer);
     }
 
-    private Telescope<Line> telescopeLine(List<Line> options, Consumer<Line> resultConsumer) {
+    private Telescope<Line> telescopeLine(VimEng vimEng, TrieMapManager tm, List<Line> options, Consumer<Line> resultConsumer) {
         Telescope<Line> telescope = new Telescope<>(vimEng);
         telescope.setOptions(options);
         telescope.setOptionToStrFunc(str -> str.getContent() + ((str.getGhostContent() != null) ? " - " + str.getGhostContent() : ""));
@@ -598,11 +593,11 @@ public class VKeyMaps {
         return telescope;
     }
 
-    private void shiftMap(char chr) {
+    private void shiftMap(TrieMapManager tm, char chr) {
         tm.addStrokeMapping(new KeyStroke(chr, false, false, true), "" + chr);
     }
 
-    private void createSimpleCharMappings(List<VimMode> vimModes) {
+    private void createSimpleCharMappings(VimEng vimEng, List<VimMode> vimModes, TrieMapManager tm) {
         for (int i = 32; i < 127; i++) {
             final String chr = "" + (char) i;
             tm.putKeyMap(vimModes, chr, "simple insert char key mapping",
@@ -611,9 +606,5 @@ public class VKeyMaps {
                         return null;//no mapping
                     }, true);
         }
-    }
-
-    public TrieMapManager getTrieManager() {
-        return tm;
     }
 }

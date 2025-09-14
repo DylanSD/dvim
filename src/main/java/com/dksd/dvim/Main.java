@@ -89,11 +89,12 @@ public class Main {
             //screen.refresh();
 
             ExecutorService threadPool = Executors.newVirtualThreadPerTaskExecutor();
-            VimEng ve = new VimEng(screen, threadPool);
             TrieMapManager trieMapManager = new TrieMapManager();
-            VKeyMaps vKeyMaps = new VKeyMaps(ve, trieMapManager);
-            ve.setKeyMaps(vKeyMaps);
-            ve.updateStatus();
+            VKeyMaps vKeyMaps = new VKeyMaps();
+            VimEng ve = new VimEng(screen, threadPool, trieMapManager);
+            vKeyMaps.loadKeys(ve, trieMapManager);
+
+            ve.updateStatusBuffer();
             /*
             You can attach a resize listener to your Terminal object, which will invoke a callback method (usually on a
             separate thread) when it is informed of the terminal emulator window changing size. Notice that maybe not
@@ -133,7 +134,7 @@ public class Main {
             do {
                 KeyStroke key = screen.readInput();
                 if (key != null) {
-                    ve.handleKey(trieMapManager, key);
+                    ve.handleKey(key);
                     if (key.getEventTime() - lastkeyTime > 2) {
                         ve.getView().draw(screen);
                     }

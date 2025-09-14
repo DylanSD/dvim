@@ -64,4 +64,8 @@ public class TrieNode {
     public void setDescription(String desc) {
         this.desc = desc;
     }
+
+    public String getLeft() {
+        return left;
+    }
 }

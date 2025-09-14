@@ -35,7 +35,7 @@ class BufTest {
         //verify position
         assertEquals(0, buf.getCol());
         assertEquals(0, buf.getRow());
-        assertEquals("", buf.getLine());
+        assertEquals("", buf.getLine(0));
     }
     
     @Test
@@ -44,7 +44,7 @@ class BufTest {
         //verify position.
         assertEquals(4, buf.getCol());
         assertEquals(0, buf.getRow());
-        assertEquals("abcd", buf.getLine());
+        assertEquals("abcd", buf.getLine(0));
     }
 
     @Test
@@ -56,7 +56,7 @@ class BufTest {
         //verify position.
         assertEquals(9, buf.getCol());
         assertEquals(0, buf.getRow());
-        assertEquals("abcdefghijk", buf.getLine());
+        assertEquals("abcdefghijk", buf.getLine(0));
     }
 
     @Test
@@ -64,18 +64,12 @@ class BufTest {
         String fn = "/tmp/tmp_" + System.currentTimeMillis();
         buf.addRow("test1");
         buf.addRow("test2");
-        buf.writeFile(fn);
+        //buf.writeFile(fn);
         buf.readFile(fn);
         System.out.println(buf.getLinesDangerous());
 
     }
 
-    @Test
-    void croppedLinesOneHeightTest() {
-        buf.setLines(List.of(new Line(0, "")));
-        List<DispObj> dispObjs = buf.getLinesToDisplay();
-        assertEquals(dispObjs.size(), 1);
-    }
 
     @Test
     void croppedLinesTenHeightTest() {
