@@ -4,6 +4,8 @@ import com.dksd.dvim.buffer.Buf;
 import com.dksd.dvim.complete.TabCompletion;
 import com.dksd.dvim.complete.Telescope;
 import com.dksd.dvim.engine.VimEng;
+import com.dksd.dvim.history.Harpoon;
+import com.dksd.dvim.history.HarpoonDir;
 import com.dksd.dvim.history.Harpoons;
 import com.dksd.dvim.mapping.trie.TrieMapManager;
 import com.dksd.dvim.model.ChatModel;
@@ -350,6 +352,15 @@ public class VKeyMaps {
             //TODO
             return null;
         });
+        tm.putKeyMap(VimMode.COMMAND, "<leader>hp", "show harpoon prompts with telescope", s -> {
+            Harpoon<Path> promptHarpoons = new HarpoonDir("directory");
+            //Show telescope for a directory that then loads the filenames and preview the prompts
+            //Load previews automatically.
+            //Then selects the prompt.
+            //what about calling the llm too?
+            telescope(vimEng, tm, promptHarpoons.toList(), null);
+            return null;
+        });
         tm.putKeyMap(VimMode.COMMAND, "<leader>fh", "find harpoons", s -> {
             telescope(vimEng, tm, harpoons.getList(), null);
             return null;
@@ -570,7 +581,7 @@ public class VKeyMaps {
         return harpoons.getDirs().current();
     }
 
-    private void telescope(VimEng vimEng, TrieMapManager trieMapManager, List<String> options, Consumer<Line> resultConsumer) {
+    private <T> void telescope(VimEng vimEng, TrieMapManager trieMapManager, List<T> options, Consumer<Line> resultConsumer) {
         telescopeLine(vimEng, trieMapManager, LinesHelper.convertToLines(options), resultConsumer);
     }
 

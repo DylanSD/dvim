@@ -8,12 +8,12 @@ import java.util.List;
 
 public class Harpoons {
 
-    Harpoon<List<String>> clipboard = new Harpoon<>(HarpoonType.CLIPBOARD);
-    Harpoon<String> prompts = new Harpoon<>(HarpoonType.CLIPBOARD);
-    Harpoon<String> keyMappings = new Harpoon<>(HarpoonType.KEYS);
-    Harpoon<Buf> buffers = new Harpoon<>(HarpoonType.BUFFERS);
-    Harpoon<Path> dirs = new Harpoon<>(HarpoonType.DIRS);
-    Harpoon<Path> files = new Harpoon<>(HarpoonType.FILES);
+    Harpoon<List<String>> clipboard = new HarpoonListString(HarpoonType.CLIPBOARD);
+    Harpoon<String> prompts = new HarpoonString(HarpoonType.CLIPBOARD);
+    Harpoon<String> keyMappings = new HarpoonString(HarpoonType.KEYS);
+    Harpoon<Buf> buffers = new HarpoonBuf();
+    Harpoon<Path> dirs = new HarpoonDir();
+    Harpoon<Path> files = new HarpoonDir();
 
     public Harpoon<List<String>> getClipboard() {
         return clipboard;

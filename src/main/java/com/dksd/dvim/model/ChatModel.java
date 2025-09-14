@@ -1,9 +1,6 @@
 package com.dksd.dvim.model;
 
 import com.dksd.dvim.buffer.Buf;
-import com.dksd.dvim.view.Line;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.sun.jdi.ArrayReference;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
@@ -11,9 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
 
 public class ChatModel {
 

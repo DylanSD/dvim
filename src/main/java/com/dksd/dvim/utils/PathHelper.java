@@ -58,4 +58,8 @@ public class PathHelper {
                 })
                 .collect(Collectors.toList());
     }
+
+    public static List<Path> loadFilesIntoHarpoon(String directory) {
+        return streamPath(Path.of(directory), null, null).toList();
+    }
 }
