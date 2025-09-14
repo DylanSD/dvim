@@ -38,7 +38,22 @@ public class TrieMapManager {
             if (!".".equals(keyStrokesStr)) {
                 prevExecFunctionNodes.addFirst(foundNode);
             }
-            //mapRecursively(foundNodesResponse, depth + 1, vimMode, funcResult);
+            return mapString(vimMode, funcResult);
+        }
+        return foundNode;
+    }
+
+    private TrieNode mapString(VimMode vimMode, String funcResult) {
+        if (funcResult == null) {
+            return null;
+        }
+        TrieNode foundNode = mappings.get(vimMode).find(funcResult);
+        if (foundNode == null) {
+            return null;
+        }
+        if (foundNode.isCompleteWord()) {
+            String fResult = foundNode.getLastFunc().apply(funcResult);
+            return mapString(vimMode, fResult);
         }
         return foundNode;
     }

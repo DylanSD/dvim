@@ -1,13 +1,5 @@
 package com.dksd.dvim.buffer;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -209,57 +201,17 @@ public class Buf {
         return lines.getLines();
     }
 
-    public void readFile(String filenameIn) {
-        filename = filenameIn;
-
-        try {
-            lines.clear();
-            lines.addAll(Line.convert(Files.readAllLines(new File(filenameIn).toPath(), StandardCharsets.UTF_8)));
-            eventQueue.add(new VimEvent(bufNo, EventType.BUF_CHANGE));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public void writeFile() {
-        try {
-            writeFile(filename.split(""));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public void writeFile(String[] filenameOuts) throws IOException {
-        for (String filenameOut : filenameOuts) {
-            try (
-                    PrintWriter printWriter = new PrintWriter(
-                            new BufferedWriter(
-                                    new OutputStreamWriter(
-                                            Files.newOutputStream(Paths.get(filenameOut)),
-                                            StandardCharsets.UTF_8
-                                    )
-                            )
-                    )
-            ) {
-                for (Line line : lines.getLines()) {
-                    printWriter.println(line.getContent());
-                }
-            }
-            System.out.println("Wrote " + filenameOut);
-        }
-    }
-
     public String getName() {
         return name;
     }
 
     public void setLinesListStr(List<String> lines) {
-        setLines(LinesHelper.convertToLines(lines));
+        setLines(LinesHelper.convertToLines(lines), 15);
     }
 
-    public void setLines(List<Line> keptLines) {
+    public void setLines(List<Line> keptLines, int insertAfter) {
         this.lines.clear();
-        this.lines.addAll(keptLines);
+        this.lines.addAll(keptLines, insertAfter);
         eventQueue.add(new VimEvent(bufNo, EventType.BUF_CHANGE));
     }
 
@@ -459,6 +411,12 @@ public class Buf {
 
     public void updateStatusBuffer(VimMode vimMode, String keys) {
         String ans = SFormatter.format("MODE: {{status}} Keys: {{keys}}", vimMode.toString(), keys);
-        setLines(List.of(Line.of(0, ans, null)));
+        setLines(List.of(Line.of(0, ans, null)), 15);
+    }
+
+    public void removeLines(int startRow, int endRow) {
+        for (int i = startRow; i < endRow; i++) {
+            lines.remove(i);
+        }
     }
 }

@@ -8,24 +8,23 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.logging.FileHandler;
 
-public class HarpoonDir extends RingBuffer<Path> implements Harpoon<Path> {
+public class HarpoonFile extends RingBuffer<Path> implements Harpoon<Path> {
 
     private final HarpoonType type;
 
-    public HarpoonDir() {
+    public HarpoonFile() {
         super(Collections.synchronizedList(new ArrayList<>()));
         this.type = HarpoonType.DIRS;
     }
 
-    public HarpoonDir(List<Path> items) {
+    public HarpoonFile(List<Path> items) {
         super(items);
         this.type = HarpoonType.DIRS;
     }
 
-    public HarpoonDir(String directory) {
-        super(PathHelper.loadPathsIntoHarpoon(directory, p -> Files.isDirectory(p)));
+    public HarpoonFile(String directory) {
+        super(PathHelper.loadPathsIntoHarpoon(directory, p -> !Files.isDirectory(p)));
         this.type = HarpoonType.DIRS;
     }
 

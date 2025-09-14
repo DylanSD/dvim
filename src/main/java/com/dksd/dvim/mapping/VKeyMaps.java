@@ -6,11 +6,13 @@ import com.dksd.dvim.complete.Telescope;
 import com.dksd.dvim.engine.VimEng;
 import com.dksd.dvim.history.Harpoon;
 import com.dksd.dvim.history.HarpoonDir;
+import com.dksd.dvim.history.HarpoonFile;
 import com.dksd.dvim.history.Harpoons;
 import com.dksd.dvim.mapping.trie.TrieMapManager;
 import com.dksd.dvim.model.ChatModel;
 import com.dksd.dvim.model.ModelName;
 import com.dksd.dvim.utils.LinesHelper;
+import com.dksd.dvim.utils.PathHelper;
 import com.dksd.dvim.utils.ScriptBuilder;
 import com.dksd.dvim.view.Line;
 import com.dksd.dvim.view.View;
@@ -23,7 +25,7 @@ import org.slf4j.LoggerFactory;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 import static com.dksd.dvim.utils.PathHelper.getCurrentDir;
@@ -160,13 +162,20 @@ public class VKeyMaps {
         }, true);
         tm.putKeyMap(VimMode.COMMAND, "/", "search for text and jump to the text", s -> {
             vimEng.setVimMode(VimMode.INSERT);
-            telescope(vimEng, tm, Line.convertLines(vimEng.getView().getActiveBuf().getLinesDangerous()),
-                    lineResult -> {
+            telescope(vimEng,
+                    tm,
+                    vimEng.getView().getActiveBuf().getLinesDangerous(),
+                    obj -> obj.getContent() + " : " + obj.getIndicatorStr(),
+                    tele -> {
+                        Line selected = tele.getEitherResult();
                         Buf activeBuf = vimEng.getView().getActiveBuf();
-                        int foundRow = lineResult.getLineNumber();
+                        int foundRow = selected.getLineNumber();
                         String foundStr = vimEng.getLineAt(foundRow).getContent();
-                        vimEng.moveCursor(activeBuf.getBufNo(), foundRow - vimEng.getRow(), foundStr.indexOf(lineResult.getContent()) - vimEng.getCol());
+                        vimEng.moveCursor(activeBuf.getBufNo(),
+                                foundRow - vimEng.getRow(),
+                                foundStr.indexOf(selected.getContent()) - vimEng.getCol());
                         vimEng.setVimMode(VimMode.COMMAND);
+                        return null;
                     });
             return null;//no mapping
         });
@@ -297,7 +306,7 @@ public class VKeyMaps {
             System.out.println("Pressed <C-[> to go into command mode");
             return null;//no mapping
         });
-        tm.putKeyMap(List.of(VimMode.INSERT), "<bs>", "desc", s -> {
+        tm.putKeyMap(List.of(VimMode.INSERT), "<bs>", "backspace", s -> {
             vimEng.moveCursor(0, -1);
             vimEng.deleteInLine(1);
             //TODO why do we need this?
@@ -306,20 +315,20 @@ public class VKeyMaps {
             return null;//no mapping
         });
         tm.putKeyMap(VimMode.COMMAND, "<leader>ff", "find files", s -> {
-            telescope(vimEng, tm, streamPathToStr(getCurrentPath(), Files::isRegularFile).toList(),
+            /*telescope(vimEng, tm, streamPathToStr(getCurrentPath(), Files::isRegularFile).toList(),
                     lineResult -> {
                         vimEng.loadFile(vimEng.getActiveBuf(), lineResult.getContent());
-                    });
+                    });*/
             return null;
         });
         tm.putKeyMap(VimMode.COMMAND, "<leader>fd", "find and set directories", s -> {
-            Predicate<Path> filter = path -> Files.isDirectory(path) &&
+            /*Predicate<Path> filter = path -> Files.isDirectory(path) &&
                     (path.toString().contains("projects") ||
                             path.toString().contains("wtcode") ||
                             path.toString().contains("dev"));
             telescope(vimEng, tm, streamPathToStr(getCurrentPath().getParent(), filter).toList(), line -> {
                 setCurrentDir(Path.of(line.getContent()));
-            });
+            });*/
             return null;
         });
         tm.putKeyMap(VimMode.COMMAND, "<c-w><right>", "expand active buffer to the right", s -> {
@@ -344,7 +353,7 @@ public class VKeyMaps {
         });
         tm.putKeyMap(VimMode.COMMAND, ":", "open command window", s -> {
             List<String> options = List.of("write", "read", "quit", "find", "grep");
-            telescope(vimEng, tm, options, lineResult -> vimEng.executeFunction(vimEng.getActiveBuf(), lineResult.getContent()));
+            //telescope(vimEng, tm, options, lineResult -> vimEng.executeFunction(vimEng.getActiveBuf(), lineResult.getContent()));
             return null;
         });
         tm.putKeyMap(VimMode.COMMAND, "<leader>fm", "find key mapping", s -> {
@@ -353,16 +362,20 @@ public class VKeyMaps {
             return null;
         });
         tm.putKeyMap(VimMode.COMMAND, "<leader>hp", "show harpoon prompts with telescope", s -> {
-            Harpoon<Path> promptHarpoons = new HarpoonDir("directory");
-            //Show telescope for a directory that then loads the filenames and preview the prompts
-            //Load previews automatically.
-            //Then selects the prompt.
-            //what about calling the llm too?
-            telescope(vimEng, tm, promptHarpoons.toList(), null);
+            Harpoon<Path> promptHarpoon = new HarpoonFile("/Users/dylan/Developer/prompts/");
+            telescope(vimEng, tm,
+                    promptHarpoon.toList(),
+                    path -> path.toString(),
+                    tele -> {
+                        Line result = tele.getEitherResult();
+                        Path resultPath = Path.of(result.getContent());
+                        return promptHarpoon.setCurrent(resultPath);
+                    }
+            );
             return null;
         });
         tm.putKeyMap(VimMode.COMMAND, "<leader>fh", "find harpoons", s -> {
-            telescope(vimEng, tm, harpoons.getList(), null);
+            //telescope(vimEng, tm, harpoons.getList(), null);
             return null;
         });
         //Be kind cool to show various time options in telescope, then select mapping then another
@@ -581,24 +594,15 @@ public class VKeyMaps {
         return harpoons.getDirs().current();
     }
 
-    private <T> void telescope(VimEng vimEng, TrieMapManager trieMapManager, List<T> options, Consumer<Line> resultConsumer) {
-        telescopeLine(vimEng, trieMapManager, LinesHelper.convertToLines(options), resultConsumer);
-    }
-
-    private Telescope<Line> telescopeLine(VimEng vimEng, TrieMapManager tm, List<Line> options, Consumer<Line> resultConsumer) {
-        Telescope<Line> telescope = new Telescope<>(vimEng);
+    private <T> Telescope<T> telescope(VimEng vimEng,
+                               TrieMapManager tm,
+                               List<T> options,
+                               Function<T, String> optionToStrFunc,
+                               Function<Telescope<T>, T> onEnterFunc) {
+        Telescope<T> telescope = new Telescope<>(vimEng);
         telescope.setOptions(options);
-        telescope.setOptionToStrFunc(str -> str.getContent() + ((str.getGhostContent() != null) ? " - " + str.getGhostContent() : ""));
-        telescope.setResultConsumer(resultConsumer);
-        telescope.setOnEnterFunc(tele -> {
-            Line selected = tele.getResultsBuf().getCurrentLine();
-            if (!selected.isEmpty()) {
-                telescope.getResultFuture().complete(selected);
-            } else {
-                telescope.getResultFuture().complete(tele.getInputBuf().getCurrentLine());
-            }
-            return null;
-        });
+        telescope.setOptionToStrFunc(optionToStrFunc);
+        telescope.setOnEnterFunc(onEnterFunc);
         telescope.setTrieManager(tm);
         telescope.start();
         return telescope;

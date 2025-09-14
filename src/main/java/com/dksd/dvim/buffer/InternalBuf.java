@@ -51,8 +51,8 @@ public class InternalBuf {
         getCurrBuf().clear();
     }
 
-    public void addAll(List<Line> convert) {
-        pushAndGet().addAll(convert);
+    public void addAll(List<Line> convert, int insertAfter) {
+        pushAndGet().addAll(insertAfter, convert);
     }
 
     public void add(Line line) {

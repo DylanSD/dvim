@@ -1,6 +1,6 @@
 package com.dksd.dvim.history;
 
-import com.dksd.dvim.utils.RingBuffer;
+import com.dksd.dvim.buffer.Buf;
 
 import java.util.List;
 
@@ -15,5 +15,5 @@ public interface Harpoon<T> {
 
     List<T> toList();
 
-    void setCurrent(T value);
+    T setCurrent(T value);
 }

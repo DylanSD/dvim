@@ -82,7 +82,7 @@ public class TabCompletion {
                     TrieNode tn = foundNodes.get(i);
                     suggestedLines.add(new Line(i, tn.getContent(), null));
                 }
-                tabBuf.setLines(suggestedLines);
+                tabBuf.setLines(suggestedLines, 15);
             }
         });
         awaitResult();

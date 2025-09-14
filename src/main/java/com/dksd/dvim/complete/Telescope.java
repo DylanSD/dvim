@@ -5,6 +5,7 @@ import com.dksd.dvim.engine.VimEng;
 import com.dksd.dvim.event.EventType;
 import com.dksd.dvim.event.VimEvent;
 import com.dksd.dvim.mapping.trie.TrieMapManager;
+import com.dksd.dvim.utils.PathHelper;
 import com.dksd.dvim.view.Line;
 import com.dksd.dvim.view.View;
 import com.dksd.dvim.view.VimMode;
@@ -12,6 +13,7 @@ import de.gesundkrank.fzf4j.matchers.FuzzyMatcherV1;
 import de.gesundkrank.fzf4j.models.OrderBy;
 import de.gesundkrank.fzf4j.models.Result;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -19,7 +21,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -48,7 +49,6 @@ public final class Telescope<T> {
     private List<T> options;
     private Function<T, String> optionToStrFunc;
     private Function<Telescope<T>, T> onEnterFunc;
-    private Consumer<T> resultConsumer;
     private TrieMapManager trieMapManager;
     private ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor();
 
@@ -69,6 +69,7 @@ public final class Telescope<T> {
     private Buf resultsBuf;
     private int inputBufNo;
     private int resultsBufNo;
+    private List<Result> results;
 
     public Telescope(VimEng vimEng) {
         this.vimEng = vimEng;
@@ -77,13 +78,11 @@ public final class Telescope<T> {
     public Telescope(VimEng vimEng,
                      List<T> options,
                      Function<Telescope<T>, T> onEnterFunc,
-                     Consumer<T> resultConsumer,
                      TrieMapManager trieMapManager,
                      long timeout,
                      TimeUnit timeoutUnit) {
         this.vimEng = vimEng;
         this.options = options;
-        this.resultConsumer = resultConsumer;
         this.onEnterFunc = onEnterFunc;
         this.trieMapManager = trieMapManager;
         this.executorService = Executors.newVirtualThreadPerTaskExecutor();
@@ -110,7 +109,7 @@ public final class Telescope<T> {
         initViewsAndBuffers();
 
         // 2️⃣  Populate the results buffer with the raw options
-        resultsBuf.setLines(Line.convert(optionStrs));
+        resultsBuf.setLines(Line.convert(optionStrs), 15);
         
         // 4️⃣  Set up fuzzy matcher & buffer‑change listener
         registerBufChangeListener(getFuzzyMatcher(optionStrs));
@@ -154,7 +153,7 @@ public final class Telescope<T> {
      * --------------------------------------------------------------- */
     private void registerBufChangeListener(FuzzyMatcherV1 fuzzyMatcher) {
         telescopeView.addListener(vimEvent ->
-                handleBufChangeEvent(vimEvent,
+                results = handleBufChangeEvent(vimEvent,
                         inputBufNo,
                         inputBuf,
                         fuzzyMatcher,
@@ -177,6 +176,11 @@ public final class Telescope<T> {
                 "move selection up",
                 is -> {
                     moveArrowInResults(resultsBuf, -1, ROW_INDICATOR);
+                    if (options.getFirst() instanceof Path) {
+                        List<Line> fileContents = PathHelper.readFile(Path.of(getResultsBuf().getCurrentLine().getContent()));
+                        inputBuf.removeLines(15, -1);
+                        inputBuf.setLines(fileContents, 15);
+                    }
                     return null;
                 },
                 true);
@@ -185,13 +189,20 @@ public final class Telescope<T> {
         trieMapManager.reMap(List.of(VimMode.INSERT, VimMode.COMMAND), "<down>", "move selection down",
                 is -> {
                     moveArrowInResults(resultsBuf, 1, ROW_INDICATOR);
+                    if (options.getFirst() instanceof Path) {
+                        List<Line> fileContents = PathHelper.readFile(Path.of(getResultsBuf().getCurrentLine().getContent()));
+                        inputBuf.removeLines(15, -1);
+                        inputBuf.setLines(fileContents, 15);
+                    }
                     return null;
                 }, true);
 
         // <Enter> – confirm current selection
         trieMapManager.reMap(List.of(VimMode.INSERT, VimMode.COMMAND), "<enter>", "accept selection",
                 is -> {
+                    inputBuf.removeLines(15, -1);
                     resultFuture.complete(onEnterFunc.apply(this));
+                    revertTelescopeView(vimEng, currView, telescopeView, trieMapManager);
                     return null;
                 }, true);
 //        vKeyMaps.reMap(List.of(VimMode.COMMAND), "d", "escape telescope",
@@ -202,9 +213,6 @@ public final class Telescope<T> {
 //                }, true);
     }
 
-    /* --------------------------------------------------------------- *
-     *  Step 4 – wait for the user’s choice (background thread)        *
-     * --------------------------------------------------------------- */
     private void awaitResult() {
         executorService.submit(() -> {
             try {
@@ -212,9 +220,6 @@ public final class Telescope<T> {
                 if (lineResult != null) {
                     System.out.println("Telescope result: " + lineResult);
                     revertTelescopeView(vimEng, currView, telescopeView, trieMapManager);
-                    if (resultConsumer != null) {
-                        resultConsumer.accept(lineResult);
-                    }
                 }
             } catch (Exception e) {
                 // Timeout, cancellation or any other problem – just log
@@ -249,7 +254,7 @@ public final class Telescope<T> {
             for (Result keptLine : keptLines) {
                 keptLinesForBuf.add(Line.of(keptLine.getItemIndex(), keptLine.getText(), null));
             }
-            results.setLines(keptLinesForBuf);
+            results.setLines(keptLinesForBuf, 15);
             moveArrowInResults(resultsBuf, 0, ROW_INDICATOR);
             return keptLines;
         }
@@ -274,20 +279,8 @@ public final class Telescope<T> {
         return inputBuf;
     }
 
-    public CompletableFuture<T> getResultFuture() {
-        return resultFuture;
-    }
-
-    public void cancelFuture() {
-        resultFuture.cancel(true);
-    }
-
     public void setOptions(List<T> options) {
         this.options = options;
-    }
-
-    public void setResultConsumer(Consumer<T> resultConsumer) {
-        this.resultConsumer = resultConsumer;
     }
 
     public void setOnEnterFunc(Function<Telescope<T>, T> onEnterFunc) {
@@ -304,5 +297,11 @@ public final class Telescope<T> {
 
     public void setOptionToStrFunc(Function<T, String> optionToStrFunc) {
         this.optionToStrFunc = optionToStrFunc;
+    }
+
+    public Line getEitherResult() {
+        Line selected = getResultsBuf().getCurrentLine();
+        selected = (!selected.isEmpty()) ? selected : getInputBuf().getCurrentLine();
+        return selected;
     }
 }

@@ -4,6 +4,7 @@ import com.dksd.dvim.buffer.Buf;
 import com.dksd.dvim.mapping.KeyMappingMatcher;
 import com.dksd.dvim.mapping.VKeyMaps;
 import com.dksd.dvim.mapping.trie.TrieMapManager;
+import com.dksd.dvim.utils.PathHelper;
 import com.dksd.dvim.utils.SFormatter;
 import com.dksd.dvim.view.Line;
 import com.dksd.dvim.view.View;
@@ -13,6 +14,7 @@ import com.googlecode.lanterna.screen.TerminalScreen;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -98,9 +100,9 @@ public class VimEng {
         try {
             String[] params = getParams(functionToExec);
             if (functionToExec.startsWith("w")) {
-                activeBuf.writeFile(params);
+                PathHelper.writeFile(params, activeBuf.getLinesDangerous());
             } else if ("r".equals(functionToExec)) {
-                activeBuf.readFile(params[0]);
+                activeBuf.setLines(PathHelper.readFile(Path.of(params[0])), 0);
             }
         } catch (Exception ep) {
             ep.printStackTrace();

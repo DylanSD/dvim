@@ -41,7 +41,7 @@ public class KeyMappingMatcher {
                 } catch (Exception e) {
                     resultFuture.completeExceptionally(e);
                 }
-            }, 50, TimeUnit.MILLISECONDS);
+            }, 250, TimeUnit.MILLISECONDS);
         } else {
             executeMapping(statusBuf, vimMode, keyStrokes, resultFuture);
         }
