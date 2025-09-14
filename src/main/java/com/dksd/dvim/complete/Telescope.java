@@ -109,7 +109,7 @@ public final class Telescope<T> {
         initViewsAndBuffers();
 
         // 2️⃣  Populate the results buffer with the raw options
-        resultsBuf.setLines(Line.convert(optionStrs), 15);
+        resultsBuf.setLines(Line.convert(optionStrs), 0);
         
         // 4️⃣  Set up fuzzy matcher & buffer‑change listener
         registerBufChangeListener(getFuzzyMatcher(optionStrs));
@@ -254,7 +254,7 @@ public final class Telescope<T> {
             for (Result keptLine : keptLines) {
                 keptLinesForBuf.add(Line.of(keptLine.getItemIndex(), keptLine.getText(), null));
             }
-            results.setLines(keptLinesForBuf, 15);
+            results.setLines(keptLinesForBuf, 0);
             moveArrowInResults(resultsBuf, 0, ROW_INDICATOR);
             return keptLines;
         }

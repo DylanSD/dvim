@@ -52,7 +52,11 @@ public class InternalBuf {
     }
 
     public void addAll(List<Line> convert, int insertAfter) {
-        pushAndGet().addAll(insertAfter, convert);
+        List<Line> lines = pushAndGet();
+        while (lines.size() < insertAfter) {
+            lines.add(new Line(0, "", null)); // or however you create an "empty" Line
+        }
+        lines.addAll(insertAfter, convert);
     }
 
     public void add(Line line) {
