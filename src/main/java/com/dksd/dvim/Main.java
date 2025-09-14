@@ -43,17 +43,11 @@ public class Main {
 
         TerminalSize terminalSize = new TerminalSize(100, 40);
         defaultTerminalFactory.setInitialTerminalSize(terminalSize);
-        //defaultTerminalFactory.setTerminalEmulatorFrameAutoCloseTrigger();
-        //defaultTerminalFactory.setForceTextTerminal(true);
-        //Terminal terminal = null;
         final TerminalScreen screen = defaultTerminalFactory.createScreen();
         Logger.getLogger(Main.class.getName()).info("Created terminal: " + screen.getTerminal().getClass().getName());
 
         System.err.println("Created terminal: " + screen.getTerminal().getClass().getName());
         try {
-            //defaultTerminalFactory.setTerminalEmulatorFontConfiguration(myFontConfiguration);
-            //defaultTerminalFactory.setForceAWTOverSwing(true);
-            //terminal = defaultTerminalFactory.createTerminal();
             screen.startScreen();
             /*
             Most terminals and terminal emulators supports what's known as "private mode" which is a separate buffer for
@@ -71,22 +65,7 @@ public class Main {
             //terminal.enterPrivateMode();
 
 
-            /*
-            The terminal content should already be cleared after switching to private mode, but in case it's not, the
-            clear method should make all content set to default background color with no characters and the input cursor
-            in the top-left corner.
-             */
             screen.clear();
-
-            /*
-            It's possible to tell the terminal to hide the text input cursor
-             */
-            //screen.setsetCursorVisible(true);
-
-            /*
-            You still need to flush for changes to become visible
-             */
-            //screen.refresh();
 
             ExecutorService threadPool = Executors.newVirtualThreadPerTaskExecutor();
             TrieMapManager trieMapManager = new TrieMapManager();
@@ -95,48 +74,13 @@ public class Main {
             vKeyMaps.loadKeys(ve, trieMapManager);
 
             ve.updateStatusBuffer("");
-            /*
-            You can attach a resize listener to your Terminal object, which will invoke a callback method (usually on a
-            separate thread) when it is informed of the terminal emulator window changing size. Notice that maybe not
-            all implementations supports this. The UnixTerminal, for example, relies on the WINCH signal being sent to
-            the java process, which might not make it though if your remote shell isn't forwarding the signal properly.
-             */
             screen.getTerminal().addResizeListener((terminal1, newSize) -> {
-                // Be careful here though, this is likely running on a separate thread. Lanterna is threadsafe in
-                // a best-effort way so while it shouldn't blow up if you call terminal methods on multiple threads,
-                // it might have unexpected behavior if you don't do any external synchronization
-                //textGraphics.drawLine(5, 3, newSize.getColumns() - 1, 3, ' ');
-                //textGraphics.putString(5, 3, "Terminal Size: ", SGR.BOLD);
-                //textGraphics.putString(5 + "Terminal Size: ".length(), 3, newSize.toString());
-                //textGraphics.putString(5 + "Terminal Size: ".length(), 3, newSize.toString());
                 ve.getView().fitScrollView(newSize.getColumns(), newSize.getRows());
             });
 
-            ///textGraphics.putString(5, 4, "Last Keystroke: ", SGR.BOLD);
-            //textGraphics.putString(5 + "Last Keystroke: ".length(), 4, "<Pending>");
-            //screen.flush();
-
-            /*
-            Now let's try reading some input. There are two methods for this, pollInput() and readInput(). One is
-            blocking (readInput) and one isn't (pollInput), returning null if there was nothing to read.
-             */
-
-            //ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
-            /*
-            The KeyStroke class has a couple of different methods for getting details on the particular input that was
-            read. Notice that some keys, like CTRL and ALT, cannot be individually distinguished as the standard input
-            stream doesn't report these as individual keys. Generally special keys are categorized with a special
-            KeyType, while regular alphanumeric and symbol keys are all under KeyType.Character. Notice that tab and
-            enter are not considered KeyType.Character but special types (KeyType.Tab and KeyType.Enter respectively)
-             */
-
             do {
-                KeyStroke key = screen.readInput();
-                if (key != null) {
-                    ve.handleKey(key);
-                }
-            } while (true); //the engine will exit via a System.exit
-
+                ve.handleKey(screen.readInput());
+            } while (true);
         }
         catch(Exception e) {
             e.printStackTrace();

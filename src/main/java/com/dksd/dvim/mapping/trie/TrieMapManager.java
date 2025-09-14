@@ -32,7 +32,6 @@ public class TrieMapManager {
         if (foundNode == null) {
             return null;
         }
-        //foundNodesResponse.add(foundNode);
         if (foundNode.isCompleteWord()) {
             String funcResult = foundNode.getLastFunc().apply(keyStrokesStr);
             if (!".".equals(keyStrokesStr)) {
