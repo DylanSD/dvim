@@ -36,7 +36,7 @@ class ViewTest {
         Mockito.when(terminalScreenMock.newTextGraphics()).thenReturn(textGraphicsMock);
         Mockito.when(terminalSizeMock.getRows()).thenReturn(80);
         Mockito.when(terminalSizeMock.getColumns()).thenReturn(100);
-        view = new View("testView", terminalScreenMock, Executors.newVirtualThreadPerTaskExecutor());
+        //view = new View("testView", terminalScreenMock, Executors.newVirtualThreadPerTaskExecutor());
     }
 
     @Test

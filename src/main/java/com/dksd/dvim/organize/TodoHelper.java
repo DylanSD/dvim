@@ -1,36 +1,39 @@
-package com.dksd.dvim;
+package com.dksd.dvim.organize;
 
+import com.dksd.dvim.view.Line;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 public class TodoHelper {
 
-    private TodoCursor findTodo(int todoPos, List<String> buffer) {
-        if (todoPos < 0 || (todoPos == 0 && todoPos + 1 == buffer.size())) {
+    private TodoCursor findTodo(int row, List<Line> buffer) {
+        if (row < 0 || (row == 0 && row + 1 == buffer.size())) {
             return new TodoCursor(0, 0);
         }
         boolean flag = false;
-        int minIndent = getMinIndent(todoPos, buffer);
-        int start = todoPos;
-        int end = todoPos;
+        int minIndent = getMinIndent(row, buffer);
+        int start = row;
+        int end = row;
         int bufSize = buffer.size();
-        boolean lockStart = countLeadingSpaces(buffer.get(todoPos)) == minIndent;
-        boolean lockEnd = todoPos + 1 == bufSize
-                || countLeadingSpaces(buffer.get(todoPos + 1)) == minIndent;
+        boolean lockStart = countLeadingSpaces(buffer.get(row).getContent()) == minIndent;
+        boolean lockEnd = row + 1 == bufSize
+                || countLeadingSpaces(buffer.get(row + 1).getContent()) == minIndent;
 
         while (flag == false) {
             flag = true;
             int startCache = start - 1;
             if (startCache >= 0) {
-                int startIndent = countLeadingSpaces(buffer.get(startCache));
-                if (!lockStart && startIndent >= minIndent && countLeadingSpaces(buffer.get(start)) > minIndent) {
+                int startIndent = countLeadingSpaces(buffer.get(startCache).getContent());
+                if (!lockStart && startIndent >= minIndent && countLeadingSpaces(buffer.get(start).getContent()) > minIndent) {
                     start--;
                     flag = false;
                 }
             }
             int endCache = end + 1;
             if (endCache < bufSize) {
-                int endIndent = countLeadingSpaces(buffer.get(endCache));
+                int endIndent = countLeadingSpaces(buffer.get(endCache).getContent());
                 if (!lockEnd && endIndent > minIndent) {
                     end++;
                     flag = false;
@@ -52,11 +55,11 @@ public class TodoHelper {
         return spaceCount;
     }
 
-    private int getMinIndent(int pos, List<String> todo) {
+    private int getMinIndent(int row, List<Line> todo) {
         int minIndent = Integer.MAX_VALUE;
-        for (int i = pos; i >= 0; i--) {
-            if (countLeadingSpaces(todo.get(i)) < minIndent) {
-                minIndent = countLeadingSpaces(todo.get(i));
+        for (int i = row; i >= 0; i--) {
+            if (countLeadingSpaces(todo.get(i).getContent()) < minIndent) {
+                minIndent = countLeadingSpaces(todo.get(i).getContent());
                 if (minIndent == 0) {
                     return 0;
                 }
@@ -65,24 +68,24 @@ public class TodoHelper {
         return minIndent;
     }
 
-    public String moveTodoUpVim(int pos, List<String> buffer) {
-        TodoCursor entry = findTodo(pos, buffer);
+    public void moveTodoUpVim(int row, List<Line> buffer) {
+        TodoCursor entry = findTodo(row, buffer);
         TodoCursor entryAbove = findTodo(entry.start - 1, buffer);
-        if (entry.equals(entryAbove)) {
-            return ":noop";
-        }
-        //Everything is shifted by 1 because vim buffer starts at 1
-        return ":" + (entry.start + 1) + "," + (entry.end + 1) + "m" + " " + (entryAbove.start);
+        swapTodos(buffer, entry, entryAbove);
     }
 
-    public String moveTodoDownVim(int pos, List<String> buffer) {
+    public void moveTodoDownVim(int pos, int rowDelta, List<Line> buffer) {
         TodoCursor entry = findTodo(pos, buffer);
         TodoCursor entryBelow = findTodo(entry.end + 1, buffer);
-        if (entry.equals(entryBelow)) {
-            return ":noop";
+        swapTodos(buffer, entryBelow, entry);
+    }
+
+    private static void swapTodos(List<Line> buffer, TodoCursor entry, TodoCursor entryAbove) {
+        List<Line> lines = new ArrayList<>();
+        for (int i = entry.start; i < entry.end; i++) {
+            lines.add(buffer.remove(i));
         }
-        //Everything is shifted by 1 because vim buffer starts at 1
-        return ":" + (entry.start+1) + "," + (entry.end+1) + "m" + " " + (entryBelow.end+1);
+        buffer.addAll(entryAbove.start, lines);
     }
 
     public class TodoCursor {
@@ -108,6 +111,4 @@ public class TodoHelper {
             return Objects.hash(start, end);
         }
     }
-
-
 }

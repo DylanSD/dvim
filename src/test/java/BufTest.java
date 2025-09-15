@@ -65,7 +65,7 @@ class BufTest {
         buf.addRow("test1");
         buf.addRow("test2");
         //buf.writeFile(fn);
-        buf.readFile(fn);
+       // buf.readFile(fn);
         System.out.println(buf.getLinesDangerous());
 
     }
