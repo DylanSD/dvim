@@ -411,7 +411,7 @@ public class Buf {
 
     public void updateStatusBuffer(VimMode vimMode, String keys) {
         String ans = SFormatter.format("MODE: {{status}} Keys: {{keys}}", vimMode.toString(), keys);
-        setLines(List.of(Line.of(0, ans, null)), 15);
+        setLines(List.of(Line.of(0, ans, null)), 0);
     }
 
     public void removeLines(int startRow, int endRow) {

@@ -46,7 +46,10 @@ public class TrieNode {
     }
 
     public Function<String, String> removeLastFunc() {
-        return functions.removeLast();
+        if (functions.size() > 1) {
+            return functions.removeLast();
+        }
+        return functions.getLast();
     }
 
     public void addFunction(String desc, Function<String, String> remapFunc) {

@@ -262,7 +262,9 @@ public final class Telescope<T> {
     private String revertTelescopeView(VimEng vimEng, View currView, View telescopeView, TrieMapManager tm) {
         vimEng.setView(currView);
         telescopeView.removeListeners();
-        resultFuture.cancel(true);
+        if (!resultFuture.isDone()) {
+            resultFuture.cancel(true);
+        }
         telescopeView.reset();
         tm.removeRemappings();
         System.out.println("reverted telescope view");
