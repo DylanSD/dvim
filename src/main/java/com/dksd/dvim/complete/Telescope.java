@@ -90,8 +90,6 @@ public final class Telescope<T> {
         this.timeoutUnit = timeoutUnit;
     }
 
-
-
     /* --------------------------------------------------------------- *
      *  Public entry point                                               *
      * --------------------------------------------------------------- */

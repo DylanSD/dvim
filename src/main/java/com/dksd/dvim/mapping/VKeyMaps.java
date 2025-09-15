@@ -5,13 +5,11 @@ import com.dksd.dvim.complete.TabCompletion;
 import com.dksd.dvim.complete.Telescope;
 import com.dksd.dvim.engine.VimEng;
 import com.dksd.dvim.history.Harpoon;
-import com.dksd.dvim.history.HarpoonDir;
 import com.dksd.dvim.history.HarpoonFile;
 import com.dksd.dvim.history.Harpoons;
 import com.dksd.dvim.mapping.trie.TrieMapManager;
 import com.dksd.dvim.model.ChatModel;
 import com.dksd.dvim.model.ModelName;
-import com.dksd.dvim.utils.LinesHelper;
 import com.dksd.dvim.utils.PathHelper;
 import com.dksd.dvim.utils.ScriptBuilder;
 import com.dksd.dvim.view.Line;
@@ -26,7 +24,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 import static com.dksd.dvim.utils.PathHelper.getCurrentDir;
 import static com.dksd.dvim.utils.PathHelper.streamPathToStr;
@@ -314,7 +311,7 @@ public class VKeyMaps {
         tm.putKeyMap(VimMode.COMMAND, "<leader>ff", "find files", s -> {
             Buf activeBuf = vimEng.getView().getActiveBuf();
             telescope(vimEng, tm,
-                    streamPathToStr(getCurrentPath(), Files::isRegularFile).toList(),
+                    streamPathToStr(harpoons.getDirs().current(), Files::isRegularFile).toList(),
                     null,
                     tele -> {
                         List<Line> ls = PathHelper.readFile(Path.of(tele.getEitherResult().getContent()));
@@ -324,13 +321,14 @@ public class VKeyMaps {
             return null;
         });
         tm.putKeyMap(VimMode.COMMAND, "<leader>fd", "find and set directories", s -> {
-            /*Predicate<Path> filter = path -> Files.isDirectory(path) &&
-                    (path.toString().contains("projects") ||
-                            path.toString().contains("wtcode") ||
-                            path.toString().contains("dev"));
-            telescope(vimEng, tm, streamPathToStr(getCurrentPath().getParent(), filter).toList(), line -> {
-                setCurrentDir(Path.of(line.getContent()));
-            });*/
+            telescope(vimEng, tm,
+                    streamPathToStr(harpoons.getDirs().current(), Files::isDirectory).toList(),
+                    null,
+                    tele -> {
+                        Path result = Path.of(tele.getEitherResult().getContent());
+                        harpoons.getDirs().setCurrent(result);
+                        return tele.getEitherResult().getContent();
+                    });
             return null;
         });
         tm.putKeyMap(VimMode.COMMAND, "<c-w><right>", "expand active buffer to the right", s -> {
@@ -355,7 +353,15 @@ public class VKeyMaps {
         });
         tm.putKeyMap(VimMode.COMMAND, ":", "open command window", s -> {
             List<String> options = List.of("write", "read", "quit", "find", "grep");
-            //telescope(vimEng, tm, options, lineResult -> vimEng.executeFunction(vimEng.getActiveBuf(), lineResult.getContent()));
+            Buf activeBuf = vimEng.getActiveBuf();
+            telescope(vimEng, tm,
+                    options,
+                    null,
+                    tele -> {
+                        String result = tele.getInputBuf().getCurrentLine().getContent();
+                        vimEng.executeFunction(activeBuf, result);
+                        return result;
+                    });
             return null;
         });
         tm.putKeyMap(VimMode.COMMAND, "<leader>fm", "find key mapping", s -> {
@@ -586,14 +592,6 @@ public class VKeyMaps {
             //TODO
             return null;//no mapping
         });
-    }
-
-    private void setCurrentDir(Path dir) {
-        harpoons.getDirs().setCurrent(dir);
-    }
-
-    private Path getCurrentPath() {
-        return harpoons.getDirs().current();
     }
 
     private <T> Telescope<T> telescope(VimEng vimEng,
