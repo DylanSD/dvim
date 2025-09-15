@@ -91,6 +91,9 @@ public class TodoHelper {
             i--;
         }
         buffer.addAll(entryAbove.start, lines);
+        for (int j = 0; j < buffer.size(); j++) {
+            buffer.get(j).setLineNumber(j);
+        }
     }
 
     public class TodoCursor {
