@@ -24,8 +24,14 @@ class TodoHelperTest {
                 "    Task 3"
         );
         List<Line> buffer = LinesHelper.convertToLines(bufferStr);
-        // Move "Task B" (index 1) up → should move above Task A
-        helper.moveTodoUpVim(1, buffer);
+        helper.moveTodoDownVim(1, buffer);
+        for (Line line : buffer) {
+            System.out.println(line);
+        }
+        helper.moveTodoUpVim(3, buffer);
+        for (Line line : buffer) {
+            System.out.println(line);
+        }
     }
 
 }

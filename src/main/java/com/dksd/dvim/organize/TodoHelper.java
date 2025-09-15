@@ -10,7 +10,7 @@ public class TodoHelper {
 
     private TodoCursor findTodo(int row, List<Line> buffer) {
         if (row < 0 || (row == 0 && row + 1 == buffer.size())) {
-            return new TodoCursor(0, 0);
+            return null;
         }
         boolean flag = false;
         int minIndent = getMinIndent(row, buffer);
@@ -74,16 +74,21 @@ public class TodoHelper {
         swapTodos(buffer, entry, entryAbove);
     }
 
-    public void moveTodoDownVim(int pos, int rowDelta, List<Line> buffer) {
+    public void moveTodoDownVim(int pos, List<Line> buffer) {
         TodoCursor entry = findTodo(pos, buffer);
         TodoCursor entryBelow = findTodo(entry.end + 1, buffer);
         swapTodos(buffer, entryBelow, entry);
     }
 
     private static void swapTodos(List<Line> buffer, TodoCursor entry, TodoCursor entryAbove) {
+        if (entry == null || entryAbove == null) {
+            return;
+        }
         List<Line> lines = new ArrayList<>();
-        for (int i = entry.start; i < entry.end; i++) {
-            lines.add(buffer.remove(i));
+        int i = entry.end - entry.start;
+        while (i >=0) {
+            lines.add(buffer.remove(entry.start));
+            i--;
         }
         buffer.addAll(entryAbove.start, lines);
     }
