@@ -84,7 +84,7 @@ public class InternalBuf {
 
     public List<Line> getCurrBuf() {
         if (undoStack.isEmpty()) {
-            undoStack.push(Collections.synchronizedList(new ArrayList<>()));
+            undoStack.push(Collections.synchronizedList(new ArrayList<>(100)));
         }
         return undoStack.peek();
     }

@@ -321,7 +321,7 @@ public class Buf {
     }
 
     public List<DispObj> getLinesToDisplay() {
-        List<DispObj> dispObjs = new ArrayList<>();
+        List<DispObj> dispObjs = new ArrayList<>(300);
         int leftBorderWidth = getBorderWidths(BufferMode.LEFT_BORDER);
         int topBorderWidth = getBorderWidths(BufferMode.TOP_BORDER);
         int width = getScrollView().getWidth() - getGutterSize() - leftBorderWidth;

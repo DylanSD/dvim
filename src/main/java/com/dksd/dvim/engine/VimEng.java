@@ -176,7 +176,7 @@ public class VimEng {
     }
 
     public List<String> copyLines(int start, int end) {
-        List<String> retLines = new ArrayList<>();
+        List<String> retLines = new ArrayList<>(end - start);
         for (int i = start; i < end; i++) {
             retLines.add(getBuffer(getActiveBufNo()).getLine(i).getContent());
         }

@@ -420,7 +420,7 @@ public class View {
     }
 
     public List<String> getBufferFilenames() {
-        List<String> bufNames = new ArrayList<>();
+        List<String> bufNames = new ArrayList<>(getBuffers().size());
         for (Buf buffer : getBuffers()) {
             bufNames.add(buffer.getFilename());
         }

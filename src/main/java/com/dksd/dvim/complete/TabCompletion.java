@@ -75,9 +75,9 @@ public class TabCompletion {
         vimListener = vimEng.getView().addListener(vimEvent -> {
             if (vimEvent.getBufNo() == activeBuf.getBufNo() && EventType.BUF_CHANGE.equals(vimEvent.getEventType())) {
                 String cont = vimEng.getView().getBuffer(activeBuf.getBufNo()).getLine(r).getWord(c);
-                List<TrieNode> foundNodes = new ArrayList<>();
+                List<TrieNode> foundNodes = new ArrayList<>(5);
                 tabCompleteTrie.mapWords(foundNodes, vimEng.getVimMode(), cont);
-                List<Line> suggestedLines = new ArrayList<>();
+                List<Line> suggestedLines = new ArrayList<>(10);
                 for (int i = 0; i < foundNodes.size(); i++) {
                     TrieNode tn = foundNodes.get(i);
                     suggestedLines.add(new Line(i, tn.getContent(), null));

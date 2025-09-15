@@ -21,7 +21,7 @@ public class Line {
     }
 
     public static List<Line> convert(List<String> lns) {
-        List<Line> lines = new ArrayList<>();
+        List<Line> lines = new ArrayList<>(lns.size());
         for (int i = 0; i < lns.size(); i++) {
             lines.add(Line.of(i, lns.get(i), null));
         }
@@ -29,7 +29,7 @@ public class Line {
     }
 
     public static List<String> convertLines(List<Line> lns) {
-        List<String> lines = new ArrayList<>();
+        List<String> lines = new ArrayList<>(lns.size());
         for (int i = 0; i < lns.size(); i++) {
             lines.add(lns.get(i).getContent());
         }
