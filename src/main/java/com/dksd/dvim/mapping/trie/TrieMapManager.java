@@ -2,7 +2,9 @@ package com.dksd.dvim.mapping.trie;
 
 import com.dksd.dvim.buffer.Buf;
 import com.dksd.dvim.engine.VimEng;
+import com.dksd.dvim.history.Harpoon;
 import com.dksd.dvim.mapping.VimKey;
+import com.dksd.dvim.view.Line;
 import com.dksd.dvim.view.VimMode;
 import com.googlecode.lanterna.input.KeyStroke;
 
@@ -188,5 +190,17 @@ public class TrieMapManager {
         for (TrieNode remappedNode : remappedNodes) {
             remappedNode.removeLastFunc();
         }
+    }
+
+    public List<Line> getAllMappings() {
+        List<Line> all = new ArrayList<>(400);
+        for (Map.Entry<VimMode, Trie> entry : mappings.entrySet()) {
+            for (TrieNode node : entry.getValue().getAllKeyMappings()) {
+                Line l = new Line(0, node.getLeft(), null);
+                l.setGhostContent(node.getDesc());
+                all.add(l);
+            }
+        }
+        return all;
     }
 }

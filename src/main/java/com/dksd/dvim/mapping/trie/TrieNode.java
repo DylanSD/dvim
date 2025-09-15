@@ -68,4 +68,37 @@ public class TrieNode {
     public String getLeft() {
         return left;
     }
+
+    public void setCompleteWord(boolean completeWord) {
+        isCompleteWord = completeWord;
+    }
+
+    public List<Function<String, String>> getFunctions() {
+        return functions;
+    }
+
+    public void setFunctions(List<Function<String, String>> functions) {
+        this.functions = functions;
+    }
+
+    public boolean isHideMap() {
+        return hideMap;
+    }
+
+    public void setHideMap(boolean hideMap) {
+        this.hideMap = hideMap;
+    }
+
+    public void setLeft(String left) {
+        this.left = left;
+    }
+
+    public void setDesc(String desc) {
+        this.desc = desc;
+    }
+
+    public String getDesc() {
+        return desc;
+    }
+
 }

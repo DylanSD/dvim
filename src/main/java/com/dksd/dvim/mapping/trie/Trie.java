@@ -1,5 +1,7 @@
 package com.dksd.dvim.mapping.trie;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Function;
 
 /**
@@ -78,5 +80,20 @@ public class Trie {
             return current.getChildren().isEmpty();
         }
         return false;
+    }
+
+    public List<TrieNode> getAllKeyMappings() {
+        List<TrieNode> result = new ArrayList<>(200);
+        collectKeyMappings(root, result);
+        return result;
+    }
+
+    private void collectKeyMappings(TrieNode node, List<TrieNode> result) {
+        if (node.isCompleteWord()) {
+            result.add(node);
+        }
+        for (TrieNode child : node.getChildren().values()) {
+            collectKeyMappings(child, result);
+        }
     }
 }

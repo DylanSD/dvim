@@ -365,8 +365,14 @@ public class VKeyMaps {
             return null;
         });
         tm.putKeyMap(VimMode.COMMAND, "<leader>fm", "find key mapping", s -> {
-            //telescope(keysMappings.stream().toList(), lineResult -> harpoons.add(Harpoons.CLIPBOARD, lineResult.getContent()));
-            //TODO
+            telescope(vimEng, tm,
+                    tm.getAllMappings(),
+                    l -> l.getContent() + " : " + l.getGhostContent(),
+                    tele -> {
+                        String result = tele.getInputBuf().getCurrentLine().getContent();
+                        harpoons.getClipboard().setCurrent(List.of(result));
+                        return tele.getInputBuf().getCurrentLine();
+                    });
             return null;
         });
         tm.putKeyMap(VimMode.COMMAND, "<leader>hp", "show harpoon prompts with telescope", s -> {

@@ -89,4 +89,8 @@ public class Line {
     public String getGhostContent() {
         return ghostContent;
     }
+
+    public void setGhostContent(String ghostContent) {
+        this.ghostContent = ghostContent;
+    }
 }
