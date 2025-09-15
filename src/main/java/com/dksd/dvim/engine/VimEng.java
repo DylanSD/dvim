@@ -2,10 +2,8 @@ package com.dksd.dvim.engine;
 
 import com.dksd.dvim.buffer.Buf;
 import com.dksd.dvim.mapping.KeyMappingMatcher;
-import com.dksd.dvim.mapping.VKeyMaps;
 import com.dksd.dvim.mapping.trie.TrieMapManager;
 import com.dksd.dvim.utils.PathHelper;
-import com.dksd.dvim.utils.SFormatter;
 import com.dksd.dvim.view.Line;
 import com.dksd.dvim.view.View;
 import com.dksd.dvim.view.VimMode;
@@ -46,8 +44,8 @@ public class VimEng {
                   TrieMapManager trieMapManager) {
         terminalScreen = screen;
         this.threadPool = threadPool;
-        views.put(START_VIEW, new View(START_VIEW, screen, threadPool));
-        views.put(TELESCOPE_VIEW, new View(TELESCOPE_VIEW, screen, threadPool));
+        views.put(START_VIEW, new View(START_VIEW, screen, threadPool, true));
+        views.put(TELESCOPE_VIEW, new View(TELESCOPE_VIEW, screen, threadPool, false));
         keyMappingMatcher = new KeyMappingMatcher(trieMapManager);
         addBackgroundTask(ve -> ve.getView().draw(terminalScreen));
         newScheduledThread.scheduleWithFixedDelay(() -> {
@@ -237,10 +235,6 @@ public class VimEng {
 
     public void setLine(int row, String line) {
         getView().getBuffer(getView().getActiveBufNo()).setLine(row, line);
-    }
-
-    public void loadFile(Buf buf, String fileName) {
-
     }
 
     public void popPrevChange() {

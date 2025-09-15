@@ -103,13 +103,16 @@ public final class Telescope<T> {
     public void start() {
         resultFuture = new CompletableFuture<>();
 
-        List<String> optionStrs = options.stream().map(obj -> optionToStrFunc.apply(obj)).toList();
+        List<String> optionStrs = options.stream()
+                .map(obj -> optionToStrFunc != null ? optionToStrFunc.apply(obj) : obj.toString())
+                .toList();
 
         // 1️⃣  Initialise views and buffers
         initViewsAndBuffers();
 
         // 2️⃣  Populate the results buffer with the raw options
         resultsBuf.setLines(Line.convert(optionStrs), 0);
+        moveArrowInResults(resultsBuf, 0, ROW_INDICATOR);
         
         // 4️⃣  Set up fuzzy matcher & buffer‑change listener
         registerBufChangeListener(getFuzzyMatcher(optionStrs));
@@ -145,7 +148,6 @@ public final class Telescope<T> {
 
         // 3️⃣  Initialise UI state (arrow on first line, focus input)
         telescopeView.setActiveBuf(inputBufNo);
-        moveArrowInResults(resultsBuf, 0, ROW_INDICATOR);
     }
 
     /* --------------------------------------------------------------- *
@@ -234,10 +236,8 @@ public final class Telescope<T> {
                                           String rowIndicator) {
         if (resultsBuf.getCurrentLine() != null) {
             resultsBuf.getCurrentLine().setIndicatorStr(null);
-            System.out.println(resultsBuf.getCurrentLine());
             resultsBuf.addToRow(rowDelta);
             resultsBuf.getCurrentLine().setIndicatorStr(rowIndicator);
-            System.out.println(resultsBuf.getCurrentLine());
         }
     }
 

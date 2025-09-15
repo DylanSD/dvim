@@ -54,16 +54,14 @@ public class View {
     private int mainBufNo = -1;
     private int sideBufNo = -1;
     private int tabBufNo = -1;
-    private final ExecutorService executor;
     private JavaSyntaxHighlighter syntaxHighlighter = new JavaSyntaxHighlighter();
     private final LinkedBlockingQueue<Future<?>> futures = new LinkedBlockingQueue<>();
     private Line tabComplete;
     private AtomicLong lastDrawn = new AtomicLong();
     private AtomicInteger lastHashDrawn = new AtomicInteger();
 
-    public View(String viewName, TerminalScreen screen, ExecutorService executor) {
+    public View(String viewName, TerminalScreen screen, ExecutorService executor, boolean noUndo) {
         this.name = viewName;
-        this.executor = executor;
 
         Buf statusBuf = createBuf(
                 STATUS_BUFFER,
@@ -98,7 +96,7 @@ public class View {
                 MAIN_BUFFER + ".txt",
                 100,
                 60,
-                true,
+                false,
                 BufferMode.RELATIVE_HEIGHT,
                 BufferMode.LEFT_BORDER,
                 BufferMode.RIGHT_BORDER,
@@ -129,7 +127,7 @@ public class View {
                 SIDE_BUFFER + ".txt",
                 100,
                 40,
-                true,
+                noUndo,
                 BufferMode.RELATIVE_HEIGHT,
                 BufferMode.NO_LINE_NUMBERS,
                 BufferMode.NO_GUTTER,
@@ -215,7 +213,7 @@ public class View {
 
         int viewHash = hashCode();
         if (lastHashDrawn.get() == viewHash) {//we're good
-//            return;
+            return;
         }
 
         futures.clear();
@@ -276,6 +274,7 @@ public class View {
         for (int i = 0; i < dispLineInclGutters.size(); i++) {
             DispObj dispObj = dispLineInclGutters.get(i);
             Line gutter = genGutter(buf, dispObj.getLineContent());
+            //System.out.println("Draw gutter: " + gutter.getIndicatorStr());
                 drawString(textGraphics,
                         gutter,
                         dispObj.getScreenCol() - 6,

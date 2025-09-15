@@ -7,7 +7,7 @@ public class Line {
     private volatile int lineNumber;
     private volatile String content;
     private volatile String ghostContent;
-    private volatile String indicatorStr = null;
+    private volatile String indicatorStr;
     //TODO Folding?
 
     public Line(int lineNumber, String content, String indicatorStr) {

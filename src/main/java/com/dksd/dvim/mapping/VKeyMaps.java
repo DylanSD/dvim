@@ -165,7 +165,7 @@ public class VKeyMaps {
             telescope(vimEng,
                     tm,
                     vimEng.getView().getActiveBuf().getLinesDangerous(),
-                    obj -> obj.getContent() + " : " + obj.getIndicatorStr(),
+                    obj -> obj.getContent() + ((obj.getGhostContent() != null) ? " : " + obj.getGhostContent() : ""),
                     tele -> {
                         Line selected = tele.getEitherResult();
                         Buf activeBuf = vimEng.getView().getActiveBuf();
@@ -180,7 +180,7 @@ public class VKeyMaps {
             return null;//no mapping
         });
         tm.putKeyMap(List.of(VimMode.COMMAND, VimMode.INSERT), "<right>", "desc", s -> {
-            vimEng.moveCursor(0, +1); //right
+            vimEng.moveCursor(0, 1); //right
             return null;//no mapping
         }, true);
         tm.putKeyMap(VimMode.INSERT, "<enter>", "desc", s -> {
@@ -222,7 +222,6 @@ public class VKeyMaps {
             return null;//no mapping
         }, true);
         tm.putKeyMap(List.of(VimMode.COMMAND, VimMode.INSERT), "<home>", "desc", s -> {
-            //Line line = vimEng.getCurrentLine();
             vimEng.moveCursor(0, -vimEng.getCol());
             return null;//no mapping
         }, true);
@@ -309,16 +308,19 @@ public class VKeyMaps {
         tm.putKeyMap(List.of(VimMode.INSERT), "<bs>", "backspace", s -> {
             vimEng.moveCursor(0, -1);
             vimEng.deleteInLine(1);
-            //TODO why do we need this?
-            //vimEng.removeLastKeyStroke();
             System.out.println("Backspace pressed");
             return null;//no mapping
         });
         tm.putKeyMap(VimMode.COMMAND, "<leader>ff", "find files", s -> {
-            /*telescope(vimEng, tm, streamPathToStr(getCurrentPath(), Files::isRegularFile).toList(),
-                    lineResult -> {
-                        vimEng.loadFile(vimEng.getActiveBuf(), lineResult.getContent());
-                    });*/
+            Buf activeBuf = vimEng.getView().getActiveBuf();
+            telescope(vimEng, tm,
+                    streamPathToStr(getCurrentPath(), Files::isRegularFile).toList(),
+                    null,
+                    tele -> {
+                        List<Line> ls = PathHelper.readFile(Path.of(tele.getEitherResult().getContent()));
+                        activeBuf.setLines(ls, 0);
+                        return tele.getEitherResult().getContent();
+                    });
             return null;
         });
         tm.putKeyMap(VimMode.COMMAND, "<leader>fd", "find and set directories", s -> {
