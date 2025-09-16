@@ -212,6 +212,8 @@ public class Buf {
     public void setLines(List<Line> keptLines, int insertAfter) {
         this.lines.clear();
         this.lines.addAll(keptLines, insertAfter);
+        row.set(0);
+        col.set(0);
         eventQueue.add(new VimEvent(bufNo, EventType.BUF_CHANGE));
     }
 

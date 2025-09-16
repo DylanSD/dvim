@@ -414,11 +414,8 @@ public class VKeyMaps {
         tm.putKeyMap(VimMode.COMMAND, "<leader>to", "todo manager", s -> {
             loadFilesIntoBufs(harpoons.getTodoProjects(), Path.of("/Users/dylan/Developer/todo"), Files::isRegularFile,
                     vimEng.getView().getEvents());
-            //
             setMainBufFromBuf(vimEng, harpoons.getTodoProjects().current());
-
-            //Add some keymaps here for the project stuff
-            //Remove once done?
+            vimEng.setVimMode(VimMode.PLANNER);
 
             return null;//no mapping
         });
