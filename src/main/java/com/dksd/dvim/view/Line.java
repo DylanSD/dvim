@@ -8,6 +8,7 @@ public class Line {
     private volatile String content;
     private volatile String ghostContent;
     private volatile String indicatorStr;
+    private boolean folded = false;
     //TODO Folding?
 
     public Line(int lineNumber, String content, String indicatorStr) {
@@ -92,5 +93,9 @@ public class Line {
 
     public void setGhostContent(String ghostContent) {
         this.ghostContent = ghostContent;
+    }
+
+    public boolean isFolded() {
+        return folded;
     }
 }

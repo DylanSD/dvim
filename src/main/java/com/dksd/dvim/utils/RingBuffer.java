@@ -20,6 +20,9 @@ public class RingBuffer<T> {
     }
 
     public T next() {
+        if (items.isEmpty()) {
+            return null;
+        }
         currentIndex = (currentIndex + 1) % items.size();
         return items.get(currentIndex);
     }
@@ -30,6 +33,9 @@ public class RingBuffer<T> {
     }
 
     public T current() {
+        if (items.isEmpty()) {
+            return null;
+        }
         if (currentIndex == -1) {
             next();
         }

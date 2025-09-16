@@ -205,8 +205,8 @@ public class Buf {
         return name;
     }
 
-    public void setLinesListStr(List<String> lines) {
-        setLines(LinesHelper.convertToLines(lines), 15);
+    public void setLinesListStr(List<String> lines, int insertAfter) {
+        setLines(LinesHelper.convertToLines(lines), insertAfter);
     }
 
     public void setLines(List<Line> keptLines, int insertAfter) {
@@ -418,5 +418,9 @@ public class Buf {
         for (int i = startRow; i < endRow; i++) {
             lines.remove(i);
         }
+    }
+
+    public void setFilename(String filename) {
+        this.filename = filename;
     }
 }

@@ -14,6 +14,7 @@ public class Harpoons {
     Harpoon<Buf> buffers = new HarpoonBuf();
     Harpoon<Path> dirs = new HarpoonDir();
     Harpoon<Path> files = new HarpoonDir();
+    Harpoon<Buf> todoProjects = new HarpoonBuf();
 
     public Harpoon<List<String>> getClipboard() {
         return clipboard;
@@ -41,5 +42,9 @@ public class Harpoons {
 
     public List<String> getList() {
         return Arrays.stream(HarpoonType.values()).map(Enum::toString).toList();
+    }
+
+    public Harpoon<Buf> getTodoProjects() {
+        return todoProjects;
     }
 }

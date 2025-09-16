@@ -23,4 +23,8 @@ public class DispObj {
     public int getScreenRow() {
         return screenRow;
     }
+
+    public boolean isFolded() {
+        return this.croppedLine.isFolded();
+    }
 }

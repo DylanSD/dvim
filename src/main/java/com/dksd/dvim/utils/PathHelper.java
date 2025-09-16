@@ -1,13 +1,11 @@
 package com.dksd.dvim.utils;
 
 import com.dksd.dvim.buffer.Buf;
-import com.dksd.dvim.event.EventType;
 import com.dksd.dvim.event.VimEvent;
-import com.dksd.dvim.history.Harpoons;
+import com.dksd.dvim.history.Harpoon;
 import com.dksd.dvim.view.Line;
 
 import java.io.BufferedWriter;
-import java.io.File;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -16,17 +14,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Queue;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class PathHelper {
-
-    private static Harpoons harpoons;
-
-    public PathHelper(Harpoons harpoons) {
-        PathHelper.harpoons = harpoons;
-    }
 
     public static Stream<String> streamPathToStr(Path dir, Predicate<Path> filter) {
         return streamPath(dir, filter, 1000L).map(Path::toString);
@@ -52,13 +45,13 @@ public class PathHelper {
         return Path.of(System.getProperty("user.dir"));
     }
 
-    //Not sure when you would want to call this?
-    public static List<Buf> loadFilesIntoBufs(Path dir, Predicate<Path> filter) {
+    public static List<Buf> loadFilesIntoBufs(Harpoon<Buf> harpoonBuf, Path dir, Predicate<Path> filter, Queue<VimEvent> queue) {
         return streamPath(dir, filter, null)
                 .map(path -> {
                     try {
-                        Buf buf = new Buf(path.toString(), path.toString(), harpoons.getBuffers().getNextInt(), null, null, false);
-                        buf.setLinesListStr(Files.readAllLines(path, StandardCharsets.UTF_8));
+                        Buf buf = new Buf(path.toString(), path.toString(), harpoonBuf.getNextInt(), null, queue, false);
+                        buf.setLinesListStr(Files.readAllLines(path, StandardCharsets.UTF_8), 0);
+                        harpoonBuf.add(buf);
                         return buf;
                     } catch (IOException e) {
                         throw new RuntimeException("Failed to read file: " + path, e);

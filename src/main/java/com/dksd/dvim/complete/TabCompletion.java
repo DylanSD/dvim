@@ -42,7 +42,7 @@ public class TabCompletion {
         vimEng.getView().setTabComplete(vimEng.getCurrentLine());
         //Also call function, move to tab complete logic
         Buf tabBuf = vimEng.getView().getBufferByName(View.TAB_BUFFER);
-        tabBuf.setLinesListStr(options);
+        tabBuf.setLinesListStr(options, 15);
         moveArrowInResults(tabBuf, 0, ROW_INDICATOR);
 
         TrieMapManager tm = vimEng.getKeyMappingMatcher().getTrieMapManager();

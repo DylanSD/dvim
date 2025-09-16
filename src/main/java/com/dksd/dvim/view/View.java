@@ -275,6 +275,7 @@ public class View {
             DispObj dispObj = dispLineInclGutters.get(i);
             Line gutter = genGutter(buf, dispObj.getLineContent());
             //System.out.println("Draw gutter: " + gutter.getIndicatorStr());
+            if (!dispObj.isFolded()) {
                 drawString(textGraphics,
                         gutter,
                         dispObj.getScreenCol() - 6,
@@ -285,6 +286,7 @@ public class View {
                         dispObj.getScreenCol(),
                         dispObj.getScreenRow(),
                         futures);
+            }
         }
         if (activeBufNo.get() == buf.getBufNo()) {
             DispObj cursor = buf.getDisplayCursor();

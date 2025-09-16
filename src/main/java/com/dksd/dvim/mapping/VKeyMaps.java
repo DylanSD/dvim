@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.function.Function;
 
 import static com.dksd.dvim.utils.PathHelper.getCurrentDir;
+import static com.dksd.dvim.utils.PathHelper.loadFilesIntoBufs;
 import static com.dksd.dvim.utils.PathHelper.streamPathToStr;
 import static com.dksd.dvim.view.View.MAIN_BUFFER;
 import static com.dksd.dvim.view.View.SIDE_BUFFER;
@@ -410,6 +411,17 @@ public class VKeyMaps {
             });*/
             return null;//no mapping
         });
+        tm.putKeyMap(VimMode.COMMAND, "<leader>to", "todo manager", s -> {
+            loadFilesIntoBufs(harpoons.getTodoProjects(), Path.of("/Users/dylan/Developer/todo"), Files::isRegularFile,
+                    vimEng.getView().getEvents());
+            //
+            setMainBufFromBuf(vimEng, harpoons.getTodoProjects().current());
+
+            //Add some keymaps here for the project stuff
+            //Remove once done?
+
+            return null;//no mapping
+        });
         tm.putKeyMap(VimMode.COMMAND, "<leader>gl", "list git branches", s -> {
             /*telescope(sb.exec("git", "branch", "-a"), lineResult -> {
                 //TODO use git clipboard
@@ -546,14 +558,14 @@ public class VKeyMaps {
             return null;//no mapping
         });*/
         tm.putKeyMap(VimMode.COMMAND, ":get_routing_expr", "desc", s -> {
-            List<String> output = sb.exec("/Users/ddawkins/Developer/scripts/getRoutingConfig.sh");
+            List<String> output = sb.exec("/Users/dylan/Developer/scripts/getRoutingConfig.sh");
 //            int newBuf = getView().vsplitRight(getActiveBufNo(), "expr_routing", BorderType.LEFT);
 //            getView().getBuffer(newBuf).setLinesFromStream(output);
 //            getView().setActiveBufNo(newBuf);
             return null;//no mapping
         });
         tm.putKeyMap(VimMode.COMMAND, "<leader>nml", "desc", s -> {
-            return ":e /Users/ddawkins/Developer/notes/ml.md<enter>";
+            return ":e /Users/dylan/Developer/notes/ml.md<enter>";
         });
         tm.putKeyMap(VimMode.COMMAND, "<leader>rt", "run unit test", s -> {
             //TODO
@@ -598,6 +610,15 @@ public class VKeyMaps {
             //TODO
             return null;//no mapping
         });
+    }
+
+    private void setMainBufFromBuf(VimEng vimEng, Buf current) {
+        if (current == null) {
+            return;
+        }
+        Buf mainBuf = vimEng.getView().getBufferByName(MAIN_BUFFER);
+        mainBuf.setLines(current.getLinesDangerous(), 0);
+        mainBuf.setFilename(current.getFilename());
     }
 
     private <T> Telescope<T> telescope(VimEng vimEng,

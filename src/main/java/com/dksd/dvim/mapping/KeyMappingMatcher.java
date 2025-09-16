@@ -40,6 +40,7 @@ public class KeyMappingMatcher {
                     executeMapping(statusBuf, vimMode, keyStrokes, resultFuture);
                 } catch (Exception e) {
                     resultFuture.completeExceptionally(e);
+                    e.printStackTrace();
                 }
             }, 250, TimeUnit.MILLISECONDS);
         } else {
