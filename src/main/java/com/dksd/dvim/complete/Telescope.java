@@ -69,7 +69,6 @@ public final class Telescope<T> {
     private Buf inputBuf;
     private Buf resultsBuf;
     private int inputBufNo;
-    private int resultsBufNo;
     private List<Result> results;
     private List<VimListener> teleListenersToTrack;
 
@@ -141,10 +140,9 @@ public final class Telescope<T> {
         vimEng.setVimMode(VimMode.INSERT);
 
         inputBufNo   = telescopeView.getBufNoByName(View.SIDE_BUFFER);
-        resultsBufNo = telescopeView.getBufNoByName(View.MAIN_BUFFER);
 
         inputBuf   = telescopeView.getBuffer(inputBufNo);
-        resultsBuf = telescopeView.getBuffer(resultsBufNo);
+        resultsBuf = telescopeView.getMainBuffer();
 
         // 3️⃣  Initialise UI state (arrow on first line, focus input)
         telescopeView.setActiveBuf(inputBufNo);

@@ -29,7 +29,6 @@ import java.util.function.Function;
 import static com.dksd.dvim.utils.PathHelper.getCurrentDir;
 import static com.dksd.dvim.utils.PathHelper.loadFilesIntoBufs;
 import static com.dksd.dvim.utils.PathHelper.streamPathToStr;
-import static com.dksd.dvim.view.View.MAIN_BUFFER;
 import static com.dksd.dvim.view.View.SIDE_BUFFER;
 
 public class VKeyMaps {
@@ -333,18 +332,6 @@ public class VKeyMaps {
                     });
             return null;
         });
-        tm.putKeyMap(VimMode.COMMAND, "<c-w><right>", "expand active buffer to the right", s -> {
-            if (vimEng.getView().getActiveBuf().getName().equals(MAIN_BUFFER)) {
-                vimEng.getView().setActiveBufByName(View.SIDE_BUFFER);
-            }
-            return null;
-        });
-        tm.putKeyMap(VimMode.COMMAND, "<c-w><left>", "expand active buffer to the right", s -> {
-            if (vimEng.getView().getActiveBuf().getName().equals(SIDE_BUFFER)) {
-                vimEng.getView().setActiveBufByName(MAIN_BUFFER);
-            }
-            return null;
-        });
         tm.putKeyMap(VimMode.COMMAND, "<c-w><up>", "expand active buffer to the right", s -> {
             //vimEng.getView().expandScrollView(-1,0,0,0);
             return null;
@@ -602,7 +589,7 @@ public class VKeyMaps {
         if (current == null) {
             return;
         }
-        Buf mainBuf = vimEng.getView().getBufferByName(MAIN_BUFFER);
+        Buf mainBuf = vimEng.getView().getMainBuffer();
         mainBuf.setLines(current.getLinesDangerous(), 0);
         mainBuf.setFilename(current.getFilename());
     }

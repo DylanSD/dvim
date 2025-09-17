@@ -32,7 +32,6 @@ public class View {
 
     public static final String STATUS_BUFFER = "status";
     public static final String HEADER_BUFFER = "header";
-    public static final String MAIN_BUFFER = "main";
     public static final String SIDE_BUFFER = "side"; //used for text complete..and editing lists
     public static final String TAB_BUFFER = "tab";
     public static final TextColor.Indexed HIGHLIGHT_BG_COLOR = new TextColor.Indexed(237);
@@ -44,7 +43,7 @@ public class View {
     private AtomicInteger activeBufNo = new AtomicInteger(-1);
     private int statusBufNo = -1;
     private int headerBufNo = -1;
-    private int mainBufNo = -1;
+    private Buf mainBuf = null;
     private int sideBufNo = -1;
     private int tabBufNo = -1;
     private JavaSyntaxHighlighter syntaxHighlighter = new JavaSyntaxHighlighter();
@@ -86,9 +85,9 @@ public class View {
         headerBuf.addRow("1 - file | 2 - file 2");
         headerBufNo = headerBuf.getBufNo();
 
-        Buf mainBuf = createBuf(
-                MAIN_BUFFER,
-                MAIN_BUFFER + ".txt",
+        mainBuf = createBuf(
+                "main",
+                "main.txt",
                 100,
                 60,
                 Set.of(
@@ -97,7 +96,6 @@ public class View {
                 BufferMode.LEFT_BORDER,
                 BufferMode.RIGHT_BORDER,
                 BufferMode.TOP_BORDER));
-        mainBufNo = mainBuf.getBufNo();
         mainBuf.addRow("Line 1 of the main buffer");
         mainBuf.addRow("for (int i = 0; i < 10; i++) { System.out.println('Yoyo');}");
         mainBuf.addRow("Line 3 of the main buffer");
@@ -116,7 +114,6 @@ public class View {
         mainBuf.addRow("Line 10 of the main buffer");
         mainBuf.addRow("Line 11 of the main buffer");
         mainBuf.addRow("Line 11 of the main buffer");
-
 
         Buf sideBuf = createBuf(
                 SIDE_BUFFER,
@@ -204,10 +201,9 @@ public class View {
             screen.clear();
             Buf stBuf = buffers.get(statusBufNo);
             Buf hBuf = buffers.get(headerBufNo);
-            Buf mbuf = buffers.get(mainBufNo);
             Buf sideBuf = buffers.get(sideBufNo);
 
-            for (Buf buf : List.of(stBuf, hBuf, mbuf, sideBuf)) {
+            for (Buf buf : List.of(stBuf, hBuf, mainBuf, sideBuf)) {
                 drawBuffer(screen, textGraphics, buf, futures);
             }
 
@@ -424,37 +420,37 @@ public class View {
             return false;
         }
         View view = (View) o;
-        return statusBufNo == view.statusBufNo && headerBufNo == view.headerBufNo && mainBufNo == view.mainBufNo && sideBufNo == view.sideBufNo && tabBufNo == view.tabBufNo && Objects.equals(name, view.name) && Objects.equals(buffers, view.buffers) && Objects.equals(activeBufNo, view.activeBufNo) && Objects.equals(tabComplete, view.tabComplete);
+        return statusBufNo == view.statusBufNo && headerBufNo == view.headerBufNo && sideBufNo == view.sideBufNo && tabBufNo == view.tabBufNo && Objects.equals(name, view.name) && Objects.equals(buffers, view.buffers) && Objects.equals(activeBufNo, view.activeBufNo) && Objects.equals(tabComplete, view.tabComplete);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, buffers, activeBufNo, statusBufNo, headerBufNo, mainBufNo, sideBufNo, tabBufNo, tabComplete);
+        return Objects.hash(name, buffers, activeBufNo, statusBufNo, headerBufNo, mainBuf, sideBufNo, tabBufNo, tabComplete);
     }
 
     public void reset() {
         buffers.get(sideBufNo).reset();
-        buffers.get(mainBufNo).reset();
+        mainBuf.reset();
     }
 
     public void calcScrollView(int screenWidth, int screenHeight) {
         buffers.get(statusBufNo).setScrollView(0, 1, 0, screenWidth);
         buffers.get(headerBufNo).setScrollView(1, 2, 0, screenWidth);
-        buffers.get(mainBufNo).setScrollView(2, screenHeight, 0, screenWidth / 2);
+        mainBuf.setScrollView(2, screenHeight, 0, screenWidth / 2);
         buffers.get(sideBufNo).setScrollView(2, screenHeight, (screenWidth / 2) + 1, screenWidth);
     }
 
     public void fitScrollView(int screenWidth, int screenHeight) {
         int heightRemaining = screenHeight;
         heightRemaining -= 3;
-        int mainHeight = (buffers.get(mainBufNo).getScrollView().getPercentOfScreenHeight() * heightRemaining) / 100;
-        int newEndRow = buffers.get(mainBufNo).getScrollView().getRowStart() + mainHeight;
-        buffers.get(mainBufNo).getScrollView().setRowEnd(newEndRow);
+        int mainHeight = (mainBuf.getScrollView().getPercentOfScreenHeight() * heightRemaining) / 100;
+        int newEndRow = mainBuf.getScrollView().getRowStart() + mainHeight;
+        mainBuf.getScrollView().setRowEnd(newEndRow);
         buffers.get(sideBufNo).getScrollView().setRowEnd(newEndRow);
 
-        int mainWidth = (buffers.get(mainBufNo).getScrollView().getPercentOfScreenWidth() * screenWidth) / 100;
-        int newEndCol = buffers.get(mainBufNo).getScrollView().getColStart() + mainWidth;
-        buffers.get(mainBufNo).getScrollView().setColEnd(newEndCol);
+        int mainWidth = (mainBuf.getScrollView().getPercentOfScreenWidth() * screenWidth) / 100;
+        int newEndCol = mainBuf.getScrollView().getColStart() + mainWidth;
+        mainBuf.getScrollView().setColEnd(newEndCol);
         buffers.get(sideBufNo).getScrollView().setColStart(newEndCol + 1);
         buffers.get(sideBufNo).getScrollView().setColEnd(screenWidth);
         buffers.get(headerBufNo).getScrollView().setColEnd(screenWidth);
@@ -471,5 +467,9 @@ public class View {
 
     public void setActiveBufByName(String bufName) {
         activeBufNo.set(getBufNoByName(bufName));
+    }
+
+    public Buf getMainBuffer() {
+        return mainBuf;
     }
 }
