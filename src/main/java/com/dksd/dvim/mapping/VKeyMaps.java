@@ -128,7 +128,7 @@ public class VKeyMaps {
                 "<page-up>");
 
         //Key mappings
-        createSimpleCharMappings(vimEng, List.of(VimMode.INSERT, VimMode.PLANNER), tm);
+        createSimpleCharMappings(vimEng, List.of(VimMode.INSERT), tm);
 
         tm.putKeyMap(VimMode.COMMAND, "h", "Move left", s -> {
             vimEng.moveCursor(0, -1); //left
@@ -142,19 +142,19 @@ public class VKeyMaps {
             vimEng.moveCursor(-1, 0); //up
             return null;//no mapping
         }, true);
-        tm.putKeyMap(VimMode.COMMAND, "l", "desc", s -> {
+        tm.putKeyMap(VimMode.COMMAND, "l", "move right", s -> {
             vimEng.moveCursor(0, +1); //right
             return null;//no mapping
         }, true);
-        tm.putKeyMap(List.of(VimMode.COMMAND, VimMode.INSERT), "<left>", "desc", s -> {
+        tm.putKeyMap(List.of(VimMode.COMMAND, VimMode.INSERT), "<left>", "move cursor left", s -> {
             vimEng.moveCursor(0, -1); //left
             return null;//no mapping
         }, true);
-        tm.putKeyMap(List.of(VimMode.COMMAND, VimMode.INSERT), "<down>", "desc", s -> {
+        tm.putKeyMap(List.of(VimMode.COMMAND, VimMode.INSERT), "<down>", "move cursor down", s -> {
             vimEng.moveCursor(+1, 0); //down
             return null;//no mapping
         }, true);
-        tm.putKeyMap(List.of(VimMode.COMMAND, VimMode.INSERT), "<up>", "desc", s -> {
+        tm.putKeyMap(List.of(VimMode.COMMAND, VimMode.INSERT), "<up>", "move cursor up", s -> {
             vimEng.moveCursor(-1, 0); //up
             return null;//no mapping
         }, true);
@@ -417,7 +417,8 @@ public class VKeyMaps {
                     Files::isRegularFile,
                     vimEng.getEvents());
             setMainBufFromBuf(vimEng, harpoons.getTodoProjects().current());
-            vimEng.setVimMode(VimMode.PLANNER);
+//xx
+            //vimEng.setVimMode(VimMode.PLANNER);
 
             return null;//no mapping // great idea is to execute a whole buch of functions.
         });
@@ -587,28 +588,6 @@ public class VKeyMaps {
 
             return null;//no mapping
         });*/
-
-        tm.putKeyMap(VimMode.PLANNER, "<leader>lp", "load planner", s -> {
-            //loadFilesIntoBufs()
-            //set vimmodePlanner
-            //TODO
-            return null;//no mapping
-        });
-        tm.putKeyMap(List.of(VimMode.INSERT, VimMode.COMMAND, VimMode.PLANNER), "<leader>runp", "run planner", s -> {
-
-            //TODO
-            return null;//no mapping
-        });
-        tm.putKeyMap(VimMode.PLANNER, "fp", "fold parent", s -> {
-
-            //TODO
-            return null;//no mapping
-        });
-        tm.putKeyMap(VimMode.PLANNER, "ufp", "un-fold parent", s -> {
-
-            //TODO
-            return null;//no mapping
-        });
     }
 
     private void setMainBufFromBuf(VimEng vimEng, Buf current) {

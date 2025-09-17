@@ -117,14 +117,6 @@ public class VimEng {
         return getBuffer(getActiveBufNo());
     }
 
-//    public void removeLastKeyStroke() {
-//        int last = keyStrokes.size() - 1;
-//        while (!keyStrokes.isEmpty() && keyStrokes.get(last).getKeyType().equals(KeyType.Backspace)) {
-//            keyStrokes.remove(last);
-//            last = keyStrokes.size() - 1;
-//        }
-//    }
-
     public void stop() {
         threadPool.shutdownNow();
         newScheduledThread.shutdownNow();
@@ -193,22 +185,6 @@ public class VimEng {
     private int getActiveBufNo() {
         return getView().getActiveBufNo();
     }
-
-    /*private void registerEvent(EventType eventName, Consumer<VimEvent> consumer) {
-        keyListeners.computeIfAbsent(eventName, k -> new CopyOnWriteArraySet<>());
-        keyListeners.get(eventName).add(consumer);
-    }
-
-    private void registerEventRemoveOn(EventType eventName,
-                                             Consumer<VimEvent> consumer,
-                                             EventType exitType) {
-        registerEvent(eventName, consumer);
-        registerEvent(exitType, s -> {
-            if (keyListeners.get(eventName) != null) {
-                keyListeners.get(eventName).remove(consumer);
-            }
-        });
-    }*/
 
     public ExecutorService getThreadPool() {
         return threadPool;
