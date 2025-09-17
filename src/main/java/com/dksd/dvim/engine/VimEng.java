@@ -43,8 +43,8 @@ public class VimEng {
     private KeyMappingMatcher keyMappingMatcher;
     public static BlockingQueue<VimEvent> events = new LinkedBlockingQueue<>();
     private final List<VimListener> eventListeners = new CopyOnWriteArrayList<>();
-    private CopyOnWriteArrayList<Consumer<VimEng>> backgroundTasks = new CopyOnWriteArrayList<>();
-    private ExecutorService threadPool;
+    private final CopyOnWriteArrayList<Consumer<VimEng>> backgroundTasks = new CopyOnWriteArrayList<>();
+    private final ExecutorService threadPool;
     private final ScheduledExecutorService newScheduledThread = Executors.newSingleThreadScheduledExecutor();
 
     public VimEng(TerminalScreen screen,
@@ -54,8 +54,8 @@ public class VimEng {
     }
 
     public void init(TrieMapManager trieMapManager) {
-        views.put(START_VIEW, new View(START_VIEW, terminalScreen, true));
-        views.put(TELESCOPE_VIEW, new View(TELESCOPE_VIEW, terminalScreen, false));
+        views.put(START_VIEW, new View(START_VIEW, terminalScreen));
+        views.put(TELESCOPE_VIEW, new View(TELESCOPE_VIEW, terminalScreen));
         keyMappingMatcher = new KeyMappingMatcher(trieMapManager);
         addBackgroundTask(ve -> ve.getView().draw(terminalScreen));
         newScheduledThread.scheduleWithFixedDelay(() -> {
@@ -64,13 +64,15 @@ public class VimEng {
             }
         }, 10, 20, TimeUnit.MILLISECONDS);
         addListener(vimEvent -> {
-            String ans;
+            Buf statusBuf = getView().getBufferByName(View.STATUS_BUFFER);
+            String ans = "";
             if (vimEvent.getEventType().equals(EventType.KEY_PRESS)) {
                 ans = SFormatter.format("MODE: {{status}} Keys: {{keys}}", vimMode.toString(), vimEvent.getValue());
-            } else {
+                statusBuf.setLines(List.of(Line.of(0, ans, null)), 0);
+            } else if (vimEvent.getEventType().equals(EventType.MODE_CHANGE)) {
                 ans = SFormatter.format("MODE: {{status}}", vimMode.toString());
+                statusBuf.setLines(List.of(Line.of(0, ans, null)), 0);
             }
-            getView().getBufferByName(View.STATUS_BUFFER).setLines(List.of(Line.of(0, ans, null)), 0);
         });
         threadPool.execute(() -> {
             while (true) {
@@ -180,10 +182,6 @@ public class VimEng {
 
     public VimMode getVimMode() {
         return vimMode.get();
-    }
-
-    public void replaceLine(int row, String replaceStr) {
-        getView().getBuffer(getView().getActiveBufNo()).replaceLine(row, replaceStr);
     }
 
     private Buf getBuffer(int bufNo) {

@@ -209,13 +209,13 @@ public class VKeyMaps {
         }, true);
         tm.putKeyMap(List.of(VimMode.COMMAND, VimMode.INSERT), "<leader>m", "call mercury llm", s -> {
             chatMercuryModel.chat("Can you review the text that follows and offer suggestions?: " +
-                            vimEng.getActiveBuf().getLinesAsStr(),
+                            vimEng.getActiveBuf().getCurrentLine(),
                     vimEng.getView().getBufferByName(View.SIDE_BUFFER));
             return null;//no mapping
         }, true);
         tm.putKeyMap(List.of(VimMode.COMMAND, VimMode.INSERT), "<leader>c", "call mercury coder llm", s -> {
             chatMercuryCoderModel.chat("Can you review the text that follows and offer suggestions?: " +
-                            vimEng.getActiveBuf().getLinesAsStr(),
+                            vimEng.getActiveBuf().getCurrentLine(),
                     vimEng.getView().getBufferByName(View.SIDE_BUFFER));
             return null;//no mapping
         }, true);

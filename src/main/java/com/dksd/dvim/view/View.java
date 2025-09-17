@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -52,7 +53,7 @@ public class View {
     private AtomicLong lastDrawn = new AtomicLong();
     private AtomicInteger lastHashDrawn = new AtomicInteger();
 
-    public View(String viewName, TerminalScreen screen, boolean noUndo) {
+    public View(String viewName, TerminalScreen screen) {
         this.name = viewName;
 
         Buf statusBuf = createBuf(
@@ -60,12 +61,13 @@ public class View {
                 STATUS_BUFFER + ".txt",
                 -1,//indicates fixed
                 100,
-                false,
+                Set.of(
                 BufferMode.NO_LINE_NUMBERS,
+                BufferMode.SINGLE_LINE,
                 BufferMode.FIXED_HEIGHT,
                 BufferMode.RIGHT_BORDER,
                 BufferMode.LEFT_BORDER,
-                BufferMode.ABS_POS);
+                BufferMode.ABS_POS));
         statusBufNo = statusBuf.getBufNo();
 
         Buf headerBuf = createBuf(
@@ -73,13 +75,14 @@ public class View {
                 HEADER_BUFFER + ".txt",
                 -1,
                 100,
-                false,
+                Set.of(
                 BufferMode.UNSELECTABLE,
                 BufferMode.NO_LINE_NUMBERS,
+                        BufferMode.SINGLE_LINE,
                 BufferMode.FIXED_HEIGHT,
                 BufferMode.LEFT_BORDER,
                 BufferMode.RIGHT_BORDER,
-                BufferMode.ABS_POS);
+                BufferMode.ABS_POS));
         headerBuf.addRow("1 - file | 2 - file 2");
         headerBufNo = headerBuf.getBufNo();
 
@@ -88,11 +91,12 @@ public class View {
                 MAIN_BUFFER + ".txt",
                 100,
                 60,
-                false,
+                Set.of(
                 BufferMode.RELATIVE_HEIGHT,
+                BufferMode.ALLOW_UNDO,
                 BufferMode.LEFT_BORDER,
                 BufferMode.RIGHT_BORDER,
-                BufferMode.TOP_BORDER);
+                BufferMode.TOP_BORDER));
         mainBufNo = mainBuf.getBufNo();
         mainBuf.addRow("Line 1 of the main buffer");
         mainBuf.addRow("for (int i = 0; i < 10; i++) { System.out.println('Yoyo');}");
@@ -119,12 +123,12 @@ public class View {
                 SIDE_BUFFER + ".txt",
                 100,
                 40,
-                noUndo,
+                Set.of(
                 BufferMode.RELATIVE_HEIGHT,
                 BufferMode.NO_LINE_NUMBERS,
                 BufferMode.NO_GUTTER,
                 BufferMode.LEFT_BORDER,
-                BufferMode.TOP_BORDER);
+                BufferMode.TOP_BORDER));
         sideBufNo = sideBuf.getBufNo();
 
         Buf tabBuf = createBuf(
@@ -132,13 +136,13 @@ public class View {
                 TAB_BUFFER + ".txt",
                 50,
                 70,
-                false,
+                Set.of(
                 BufferMode.POP_OVER,
                 BufferMode.NO_LINE_NUMBERS,
                 BufferMode.LEFT_BORDER,
                 BufferMode.RIGHT_BORDER,
                 BufferMode.BOT_BORDER,
-                BufferMode.TOP_BORDER);
+                BufferMode.TOP_BORDER));
         tabBufNo = tabBuf.getBufNo();
 
         headerBuf.setTopBufs(List.of(statusBuf));
@@ -163,16 +167,15 @@ public class View {
         setActiveBuf(mainBuf.getBufNo());
     }
 
-    public Buf createBuf(String name, String filename, int percentHeight, int percentWidth, boolean keepUndos, BufferMode...bufferModes) {
+    public Buf createBuf(String name, String filename, int percentHeight, int percentWidth, Set<BufferMode> bufferModes) {
         int bufNum = buffers.size();
         Buf buf = new Buf(name,
                 filename,
                 bufNum,
                 new ScrollView(percentHeight, percentWidth),
-                keepUndos
+                bufferModes
         );
         buffers.put(bufNum, buf);
-        setBufferPermissions(bufNum, bufferModes);
         return buf;
     }
 
@@ -189,7 +192,7 @@ public class View {
 
         int viewHash = hashCode();
         if (lastHashDrawn.get() == viewHash) {//we're good
-            return;
+            //return;
         }
 
         futures.clear();

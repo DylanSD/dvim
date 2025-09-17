@@ -49,7 +49,7 @@ public class PathHelper {
         return streamPath(dir, filter, null)
                 .map(path -> {
                     try {
-                        Buf buf = new Buf(path.toString(), path.toString(), harpoonBuf.getNextInt(), null, false);
+                        Buf buf = new Buf(path.toString(), path.toString(), harpoonBuf.getNextInt(), null);
                         buf.setLinesListStr(Files.readAllLines(path, StandardCharsets.UTF_8), 0);
                         harpoonBuf.add(buf);
                         return buf;

@@ -1,14 +1,11 @@
 package com.dksd.dvim.buffer;
 
 import static org.junit.jupiter.api.Assertions.*;
+
+import com.dksd.dvim.internalbuf.InternalBuf;
 import com.dksd.dvim.view.Line;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import java.util.Arrays;
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class InternalBufTest {
 

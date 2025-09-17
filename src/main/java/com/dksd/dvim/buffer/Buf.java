@@ -8,6 +8,8 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.dksd.dvim.engine.VimEng;
+import com.dksd.dvim.internalbuf.InternalBuf;
+import com.dksd.dvim.internalbuf.InternalBufFactory;
 import com.dksd.dvim.utils.LinesHelper;
 import com.dksd.dvim.view.DispObj;
 import com.dksd.dvim.event.EventType;
@@ -26,16 +28,20 @@ public class Buf {
     private final int bufNo;
     private final ScrollView scrollView;
     private final InternalBuf lines;
+    private final Set<BufferMode> bufferModes;
     private final AtomicInteger row = new AtomicInteger(0), col = new AtomicInteger(0);
-    private final Set<BufferMode> bufferModes = new HashSet<>();
 
-    public Buf(String name, String filename, int bufNo, ScrollView scrollView,
-               boolean keepUndos) {
+    public Buf(String name, String filename, int bufNo, ScrollView scrollView) {
+        this(name, filename, bufNo, scrollView, new HashSet<>());
+    }
+
+    public Buf(String name, String filename, int bufNo, ScrollView scrollView, Set<BufferMode> modes) {
         this.filename = filename;
         this.bufNo = bufNo;
         this.name = name;
         this.scrollView = scrollView;
-        lines = new InternalBuf(keepUndos);
+        this.bufferModes = modes;
+        lines = InternalBufFactory.create(bufferModes);
     }
 
     public ScrollView getScrollView() {
@@ -47,10 +53,6 @@ public class Buf {
     }
 
     private void setRow(int row) {
-        if (row < 0 || lines.isEmpty()) {
-            this.row.set(0);
-            return;
-        }
         this.row.set(Math.min(row, this.lines.size() - 1));
     }
 
@@ -77,10 +79,7 @@ public class Buf {
         int row = getRow();
         int col = getCol();
         try {
-            if (lines.isEmpty()) {
-                lines.add(new Line(0, "", null));
-            }
-            Line line = lines.getCurrBuf(row);
+            Line line = lines.get(row);
             StringBuilder sb = new StringBuilder(line.getContent());
             sb.insert(col, str);
             lines.set(row, Line.of(line.getLineNumber(), sb.toString(), line.getIndicatorStr()));
@@ -106,7 +105,7 @@ public class Buf {
     }
 
     public void deleteLine(int row) {
-        if (!lines.isEmpty()) {
+        if (!isEmpty()) {
             lines.remove(row);
             VimEng.events.add(new VimEvent(null, bufNo, EventType.BUF_CHANGE, "" + row));
         }
@@ -119,7 +118,7 @@ public class Buf {
     public void deleteInLine(int numChars) {
         int row = getRow();
         int col = getCol();
-        Line line = lines.getCurrBuf(row);
+        Line line = lines.get(row);
         try {
             if (line != null && !line.isEmpty() && col + numChars <= line.length()) {
                 String lStr = line.getContent().substring(0, col) + line.getContent().substring(col + numChars);
@@ -134,24 +133,7 @@ public class Buf {
     }
 
     public Line getLine(int row) {
-        if (lines.isEmpty()) {
-            lines.add(new Line(0,"", null));
-            setRow(0);
-        }
-        return lines.getCurrBuf(row);
-    }
-
-    public void replaceLine(int row, String replaceStr) {
-        lines.getCurrBuf(row).setContent(replaceStr);
-        VimEng.events.add(new VimEvent(null, bufNo, EventType.BUF_CHANGE, "" + row));
-    }
-
-    public void setLine(int row, String str) {
-        while (lines.size() <= row) {
-            lines.add(new Line(row, "", null));
-        }
-        lines.set(row, new Line(row, str, null));
-        VimEng.events.add(new VimEvent(null, bufNo, EventType.BUF_CHANGE, "" + row));
+        return lines.get(row);
     }
 
     public void addBufferMode(BufferMode bufferMode) {
@@ -175,25 +157,18 @@ public class Buf {
     }
 
     public boolean isEmpty() {
-        return this.lines.isEmpty();
+        return this.lines.size() == 0;
     }
-
-    /*public List<String> copyLines(String register, int start, int end) {
-        if (lines.isEmpty()) {
-            return Collections.emptyList();
-        }
-        return lines.subList(start, end);
-    }*/
 
     public void addRow(String str) {
         int size = lines.size();
-        lines.add(new Line(size, str, null));
+        lines.set(size, new Line(size, str, null));
         setCol(str.length());
         VimEng.events.add(new VimEvent(null, bufNo, EventType.BUF_CHANGE, str));
     }
 
     public List<Line> getLinesDangerous() {
-        return lines.getLines();
+        return lines.getAll();
     }
 
     public String getName() {
@@ -205,8 +180,8 @@ public class Buf {
     }
 
     public void setLines(List<Line> keptLines, int insertAfter) {
-        this.lines.clear();
-        this.lines.addAll(keptLines, insertAfter);
+        //TODO
+        this.lines.setAll(keptLines);
         row.set(0);
         col.set(0);
         VimEng.events.add(new VimEvent(null, bufNo, EventType.BUF_CHANGE, "" + insertAfter));
@@ -230,36 +205,19 @@ public class Buf {
         return Objects.hash(name, filename, bufNo, scrollView, lines, row, col, bufferModes);
     }
 
-    public void appendToLine(String str) {
-        setLine(getRow(), getCurrentLine() + str);
-        setCol(getCurrentLine().length());
-        VimEng.events.add(new VimEvent(null, bufNo, EventType.BUF_CHANGE, str));
-    }
-
-    public Set<BufferMode> getBufferModes() {
-        return bufferModes;
-    }
-
     public void splitToNextLine() {
         int col = getCol();
         int row = getRow();
         Line line = getCurrentLine();
         String restOfline = getStrAfter(line.getContent(), col);
         line.setContent(line.getContent().substring(0, col));
-        insertStr(row + 1, restOfline);
-        for (int i = row; i < lines.size(); i++) {
-            lines.getCurrBuf(i).setLineNumber(i);
-        }
+        lines.insert(row + 1, new Line(row + 1, restOfline, null));
         incrRow();
         setCol(0);
     }
 
     private void incrRow() {
         setRow(row.incrementAndGet());
-    }
-
-    private void insertStr(int indx, String restOfline) {
-        lines.add(indx, new Line(indx, restOfline, null));
     }
 
     private String getStrAfter(String line, int col) {
@@ -298,7 +256,7 @@ public class Buf {
     }
 
     private int getVirtualRow(int row, int height) {
-        if (lines.isEmpty()) {
+        if (lines.size() == 0) {
             return 0;
         }
         int fivePToBottom = (int) (height * 0.05);
@@ -308,11 +266,12 @@ public class Buf {
     }
 
     private int getVirtualCol(int row, int col, int width) {
-        if (lines.isEmpty() || row >= lines.size()) {
+        if (lines.size() == 0 || row >= lines.size()) {
             return 0;
         }
+
         int fivePToRight = (int) (width * 0.05);
-        int stCol = Math.min(col + fivePToRight, lines.getCurrBuf(row).getContent().length()) - width;
+        int stCol = Math.min(col + fivePToRight, lines.get(row).getContent().length()) - width;
         stCol = Math.max(0, stCol);
         return stCol;
     }
@@ -330,7 +289,7 @@ public class Buf {
 
         for (int rowDataIndex = stRow; rowDataIndex < stRow + height && rowDataIndex < lines.size(); rowDataIndex++) {
 
-            Line lineStr = lines.getCurrBuf(rowDataIndex);
+            Line lineStr = lines.get(rowDataIndex);
             String str = lineStr.getContent();
 
             String croppedLine = "";
@@ -388,7 +347,7 @@ public class Buf {
     }
 
     public void reset() {
-        lines.reset();
+        lines.clear();
         row.set(0);
         col.set(0);
         VimEng.events.clear();
@@ -402,10 +361,6 @@ public class Buf {
         scrollView.setColEnd((screenWidth / 2) + (newWidth / 2));
     }
 
-    public String getLinesAsStr() {
-        return lines.getLinesAsStr();
-    }
-
     public void removeLines(int startRow, int endRow) {
         for (int i = startRow; i < endRow; i++) {
             lines.remove(i);
@@ -414,5 +369,9 @@ public class Buf {
 
     public void setFilename(String filename) {
         this.filename = filename;
+    }
+
+    public void setLine(int row, String line) {
+        lines.set(row, new Line(row, line, null));
     }
 }
