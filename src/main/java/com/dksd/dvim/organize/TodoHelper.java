@@ -8,7 +8,7 @@ import java.util.Objects;
 
 public class TodoHelper {
 
-    private TodoCursor findTodo(int row, List<Line> buffer) {
+    private static TodoCursor findTodo(int row, List<Line> buffer) {
         if (row < 0 || (row == 0 && row + 1 == buffer.size())) {
             return null;
         }
@@ -43,7 +43,7 @@ public class TodoHelper {
         return new TodoCursor(start, end);
     }
 
-    private int countLeadingSpaces(String entry) {
+    public  static int countLeadingSpaces(String entry) {
         int spaceCount = 0;
         for (char c : entry.toCharArray()) {
             if (c == ' ') {
@@ -55,7 +55,7 @@ public class TodoHelper {
         return spaceCount;
     }
 
-    private int getMinIndent(int row, List<Line> todo) {
+    private static int getMinIndent(int row, List<Line> todo) {
         int minIndent = Integer.MAX_VALUE;
         for (int i = row; i >= 0; i--) {
             if (countLeadingSpaces(todo.get(i).getContent()) < minIndent) {
@@ -68,13 +68,13 @@ public class TodoHelper {
         return minIndent;
     }
 
-    public void moveTodoUpVim(int row, List<Line> buffer) {
+    public static void moveTodoUpVim(int row, List<Line> buffer) {
         TodoCursor entry = findTodo(row, buffer);
         TodoCursor entryAbove = findTodo(entry.start - 1, buffer);
         swapTodos(buffer, entry, entryAbove);
     }
 
-    public void moveTodoDownVim(int pos, List<Line> buffer) {
+    public static void moveTodoDownVim(int pos, List<Line> buffer) {
         TodoCursor entry = findTodo(pos, buffer);
         TodoCursor entryBelow = findTodo(entry.end + 1, buffer);
         swapTodos(buffer, entryBelow, entry);
@@ -96,8 +96,7 @@ public class TodoHelper {
         }
     }
 
-    public class TodoCursor {
-
+    public static class TodoCursor {
         int start;
         int end = -1;
 

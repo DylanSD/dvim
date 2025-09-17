@@ -10,6 +10,7 @@ import com.dksd.dvim.history.Harpoons;
 import com.dksd.dvim.mapping.trie.TrieMapManager;
 import com.dksd.dvim.model.ChatModel;
 import com.dksd.dvim.model.ModelName;
+import com.dksd.dvim.organize.TodoHelper;
 import com.dksd.dvim.utils.PathHelper;
 import com.dksd.dvim.utils.ScriptBuilder;
 import com.dksd.dvim.view.Line;
@@ -417,10 +418,17 @@ public class VKeyMaps {
                     Files::isRegularFile,
                     vimEng.getEvents());
             setMainBufFromBuf(vimEng, harpoons.getTodoProjects().current());
-//xx
-            //vimEng.setVimMode(VimMode.PLANNER);
-
+            //Ok so now what? folding, move up, move down
             return null;//no mapping // great idea is to execute a whole buch of functions.
+        });
+        tm.putKeyMap(VimMode.COMMAND, "<leader>m<up>", "move todo up", s -> {
+            TodoHelper.moveTodoUpVim(vimEng.getRow(), vimEng.getActiveBuf().getLinesDangerous());
+            return null;
+        });
+        tm.putKeyMap(VimMode.COMMAND, "<leader>m<down>", "move todo down", s -> {
+            //Probably will complain about inmodifiable list
+            TodoHelper.moveTodoDownVim(vimEng.getRow(), vimEng.getActiveBuf().getLinesDangerous());
+            return null;
         });
         tm.putKeyMap(VimMode.COMMAND, "<leader>gl", "list git branches", s -> {
             /*telescope(sb.exec("git", "branch", "-a"), lineResult -> {
