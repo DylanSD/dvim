@@ -36,16 +36,16 @@ public class VimEng {
     private Logger logger = LoggerFactory.getLogger(VimEng.class);
     public static final String START_VIEW = "start_view";
     public static final String TELESCOPE_VIEW = "tele_view";
-    private Map<String, View> views = new ConcurrentHashMap<>();
-    private AtomicReference<VimMode> vimMode = new AtomicReference<>(VimMode.COMMAND);
-    private TerminalScreen terminalScreen;
-    private AtomicReference<String> activeView = new AtomicReference<>(START_VIEW);
-    private KeyMappingMatcher keyMappingMatcher;
+    private final Map<String, View> views = new ConcurrentHashMap<>();
+    private final AtomicReference<VimMode> vimMode = new AtomicReference<>(VimMode.COMMAND);
+    private final AtomicReference<String> activeView = new AtomicReference<>(START_VIEW);
     public static BlockingQueue<VimEvent> events = new LinkedBlockingQueue<>();
     private final List<VimListener> eventListeners = new CopyOnWriteArrayList<>();
     private final CopyOnWriteArrayList<Consumer<VimEng>> backgroundTasks = new CopyOnWriteArrayList<>();
     private final ExecutorService threadPool;
     private final ScheduledExecutorService newScheduledThread = Executors.newSingleThreadScheduledExecutor();
+    private TerminalScreen terminalScreen;
+    private KeyMappingMatcher keyMappingMatcher;
 
     public VimEng(TerminalScreen screen,
                   ExecutorService threadPool) {
@@ -66,11 +66,12 @@ public class VimEng {
         addListener(vimEvent -> {
             Buf statusBuf = getView().getBufferByName(View.STATUS_BUFFER);
             String ans = "";
+            System.out.println("Received event " + vimEvent);
             if (vimEvent.getEventType().equals(EventType.KEY_PRESS)) {
-                ans = SFormatter.format("MODE: {{status}} Keys: {{keys}}", vimMode.toString(), vimEvent.getValue());
+                ans = SFormatter.format("MODE: {{status}} Keys: {{keys}}", vimMode.get().toString(), vimEvent.getValue());
                 statusBuf.setLines(List.of(Line.of(0, ans, null)), 0);
             } else if (vimEvent.getEventType().equals(EventType.MODE_CHANGE)) {
-                ans = SFormatter.format("MODE: {{status}}", vimMode.toString());
+                ans = SFormatter.format("MODE: {{status}}", vimMode.get().toString());
                 statusBuf.setLines(List.of(Line.of(0, ans, null)), 0);
             }
         });
@@ -169,6 +170,7 @@ public class VimEng {
 
     public void setVimMode(VimMode vimModeIn) {
         vimMode.set(vimModeIn);
+        System.out.println("Sending vim mode change event " + vimModeIn);
         events.add(new VimEvent(getView().getName(), getActiveBuf().getBufNo(), EventType.MODE_CHANGE, vimModeIn.toString()));
     }
 

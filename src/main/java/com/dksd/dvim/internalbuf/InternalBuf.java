@@ -8,19 +8,19 @@ public interface InternalBuf {
 
     Line get(int row);
 
+    List<Line> getAll();
+
     void set(int row, Line line);
 
     void setAll(List<Line> lines);
-
-    void remove(int row);
 
     int size();
 
     void undo();
 
-    void clear();
+    void remove(int row);
 
-    List<Line> getAll();
+    void clear();
 
     void insert(int row, Line line);
 }

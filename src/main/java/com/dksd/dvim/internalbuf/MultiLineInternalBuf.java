@@ -78,6 +78,6 @@ public class MultiLineInternalBuf implements InternalBuf {
 
     @Override
     public void insert(int row, Line line) {
-
+        lines.add(row, line);
     }
 }
