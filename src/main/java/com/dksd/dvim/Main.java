@@ -4,7 +4,6 @@ import com.dksd.dvim.engine.VimEng;
 import com.dksd.dvim.mapping.VKeyMaps;
 import com.dksd.dvim.mapping.trie.TrieMapManager;
 import com.googlecode.lanterna.TerminalSize;
-import com.googlecode.lanterna.input.KeyStroke;
 import com.googlecode.lanterna.screen.TerminalScreen;
 import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
 
@@ -68,12 +67,12 @@ public class Main {
             screen.clear();
 
             ExecutorService threadPool = Executors.newVirtualThreadPerTaskExecutor();
-            TrieMapManager trieMapManager = new TrieMapManager();
-            VKeyMaps vKeyMaps = new VKeyMaps();
-            VimEng ve = new VimEng(screen, threadPool, trieMapManager);
-            vKeyMaps.loadKeys(ve, trieMapManager);
 
-            //ve.updateStatusBuffer("");
+            VKeyMaps vKeyMaps = new VKeyMaps();
+            VimEng ve = new VimEng(screen, threadPool);
+            TrieMapManager trieMapManager = new TrieMapManager();
+            ve.init(trieMapManager);
+            vKeyMaps.loadKeys(ve, trieMapManager);
             screen.getTerminal().addResizeListener((terminal1, newSize) -> {
                 ve.getView().fitScrollView(newSize.getColumns(), newSize.getRows());
             });

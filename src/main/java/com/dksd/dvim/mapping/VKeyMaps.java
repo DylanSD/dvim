@@ -412,12 +412,14 @@ public class VKeyMaps {
             return null;//no mapping
         });
         tm.putKeyMap(VimMode.COMMAND, "<leader>to", "todo manager", s -> {
-            loadFilesIntoBufs(harpoons.getTodoProjects(), Path.of("/Users/dylan/Developer/todo"), Files::isRegularFile,
-                    vimEng.getView().getEvents());
+            loadFilesIntoBufs(harpoons.getTodoProjects(),
+                    Path.of("/Users/dylan/Developer/todo"),
+                    Files::isRegularFile,
+                    vimEng.getEvents());
             setMainBufFromBuf(vimEng, harpoons.getTodoProjects().current());
             vimEng.setVimMode(VimMode.PLANNER);
 
-            return null;//no mapping
+            return null;//no mapping // great idea is to execute a whole buch of functions.
         });
         tm.putKeyMap(VimMode.COMMAND, "<leader>gl", "list git branches", s -> {
             /*telescope(sb.exec("git", "branch", "-a"), lineResult -> {

@@ -5,21 +5,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import com.catppuccin.Palette;
 import com.dksd.dvim.buffer.Buf;
 import com.dksd.dvim.buffer.BufferMode;
-import com.dksd.dvim.event.VimEvent;
-import com.dksd.dvim.event.VimListener;
 import com.dksd.dvim.higlight.JavaSyntaxHighlighter;
 import com.googlecode.lanterna.Symbols;
 import com.googlecode.lanterna.TerminalPosition;
@@ -46,8 +40,6 @@ public class View {
     public static final int CHECK_RESIZE_INTERVAL_MS = 100;
     private final String name;
     private final Map<Integer, Buf> buffers = new ConcurrentHashMap<>();
-    private final BlockingQueue<VimEvent> events = new LinkedBlockingQueue<>();
-    private final List<VimListener> eventListeners = new CopyOnWriteArrayList<>();
     private AtomicInteger activeBufNo = new AtomicInteger(-1);
     private int statusBufNo = -1;
     private int headerBufNo = -1;
@@ -60,7 +52,7 @@ public class View {
     private AtomicLong lastDrawn = new AtomicLong();
     private AtomicInteger lastHashDrawn = new AtomicInteger();
 
-    public View(String viewName, TerminalScreen screen, ExecutorService executor, boolean noUndo) {
+    public View(String viewName, TerminalScreen screen, boolean noUndo) {
         this.name = viewName;
 
         Buf statusBuf = createBuf(
@@ -169,21 +161,6 @@ public class View {
 */
 
         setActiveBuf(mainBuf.getBufNo());
-        executor.execute(() -> {
-            while (true) {
-                try {
-                    VimEvent event = events.poll(10, TimeUnit.SECONDS);
-                    if (event == null) {
-                        continue;
-                    }
-                    for (VimListener eventListener : eventListeners) {
-                        eventListener.handle(event);
-                    }
-                } catch (InterruptedException e) {
-                    //NOOP
-                }
-            }
-        });
     }
 
     public Buf createBuf(String name, String filename, int percentHeight, int percentWidth, boolean keepUndos, BufferMode...bufferModes) {
@@ -192,7 +169,6 @@ public class View {
                 filename,
                 bufNum,
                 new ScrollView(percentHeight, percentWidth),
-                events,
                 keepUndos
         );
         buffers.put(bufNum, buf);
@@ -445,33 +421,15 @@ public class View {
             return false;
         }
         View view = (View) o;
-        return statusBufNo == view.statusBufNo && headerBufNo == view.headerBufNo && mainBufNo == view.mainBufNo && sideBufNo == view.sideBufNo && tabBufNo == view.tabBufNo && Objects.equals(name, view.name) && Objects.equals(buffers, view.buffers) && Objects.equals(events, view.events) && Objects.equals(eventListeners, view.eventListeners) && Objects.equals(activeBufNo, view.activeBufNo) && Objects.equals(tabComplete, view.tabComplete);
+        return statusBufNo == view.statusBufNo && headerBufNo == view.headerBufNo && mainBufNo == view.mainBufNo && sideBufNo == view.sideBufNo && tabBufNo == view.tabBufNo && Objects.equals(name, view.name) && Objects.equals(buffers, view.buffers) && Objects.equals(activeBufNo, view.activeBufNo) && Objects.equals(tabComplete, view.tabComplete);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, buffers, events, eventListeners, activeBufNo, statusBufNo, headerBufNo, mainBufNo, sideBufNo, tabBufNo, tabComplete);
-    }
-
-    public BlockingQueue<VimEvent> getEvents() {
-        return events;
-    }
-
-    public List<VimListener> getEventListeners() {
-        return eventListeners;
-    }
-
-    public VimListener addListener(VimListener vimListener) {
-        this.eventListeners.add(vimListener);
-        return vimListener;
-    }
-
-    public void removeListeners() {
-        this.eventListeners.clear();
+        return Objects.hash(name, buffers, activeBufNo, statusBufNo, headerBufNo, mainBufNo, sideBufNo, tabBufNo, tabComplete);
     }
 
     public void reset() {
-        eventListeners.clear();
         buffers.get(sideBufNo).reset();
         buffers.get(mainBufNo).reset();
     }
@@ -502,10 +460,6 @@ public class View {
 
     public void setTabComplete(Line cLine) {
         this.tabComplete = cLine;
-    }
-
-    public void removeListener(VimListener vimListener) {
-        eventListeners.remove(vimListener);
     }
 
     public void setActiveBuf(int bufNo) {

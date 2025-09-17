@@ -4,6 +4,7 @@ import com.dksd.dvim.buffer.Buf;
 import com.dksd.dvim.engine.VimEng;
 import com.dksd.dvim.event.EventType;
 import com.dksd.dvim.event.VimEvent;
+import com.dksd.dvim.event.VimListener;
 import com.dksd.dvim.mapping.trie.TrieMapManager;
 import com.dksd.dvim.utils.PathHelper;
 import com.dksd.dvim.view.Line;
@@ -70,6 +71,7 @@ public final class Telescope<T> {
     private int inputBufNo;
     private int resultsBufNo;
     private List<Result> results;
+    private List<VimListener> teleListenersToTrack;
 
     public Telescope(VimEng vimEng) {
         this.vimEng = vimEng;
@@ -152,12 +154,12 @@ public final class Telescope<T> {
      *  Step 2 – listener that reacts to user typing in the input buf   *
      * --------------------------------------------------------------- */
     private void registerBufChangeListener(FuzzyMatcherV1 fuzzyMatcher) {
-        telescopeView.addListener(vimEvent ->
+        teleListenersToTrack.add(vimEng.addListener(vimEvent ->
                 results = handleBufChangeEvent(vimEvent,
                         inputBufNo,
                         inputBuf,
                         fuzzyMatcher,
-                        resultsBuf));
+                        resultsBuf)));
     }
 
     /* --------------------------------------------------------------- *
@@ -261,7 +263,7 @@ public final class Telescope<T> {
 
     private String revertTelescopeView(VimEng vimEng, View currView, View telescopeView, TrieMapManager tm) {
         vimEng.setView(currView);
-        telescopeView.removeListeners();
+        vimEng.removeListeners(teleListenersToTrack);
         if (!resultFuture.isDone()) {
             resultFuture.cancel(true);
         }

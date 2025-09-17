@@ -4,18 +4,16 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.dksd.dvim.engine.VimEng;
 import com.dksd.dvim.utils.LinesHelper;
-import com.dksd.dvim.utils.SFormatter;
 import com.dksd.dvim.view.DispObj;
 import com.dksd.dvim.event.EventType;
 import com.dksd.dvim.event.VimEvent;
 import com.dksd.dvim.view.Line;
 import com.dksd.dvim.view.ScrollView;
-import com.dksd.dvim.view.VimMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,13 +28,11 @@ public class Buf {
     private final InternalBuf lines;
     private final AtomicInteger row = new AtomicInteger(0), col = new AtomicInteger(0);
     private final Set<BufferMode> bufferModes = new HashSet<>();
-    private final Queue<VimEvent> eventQueue;
 
-    public Buf(String name, String filename, int bufNo, ScrollView scrollView, Queue<VimEvent> eventQueue,
+    public Buf(String name, String filename, int bufNo, ScrollView scrollView,
                boolean keepUndos) {
         this.filename = filename;
         this.bufNo = bufNo;
-        this.eventQueue = eventQueue;
         this.name = name;
         this.scrollView = scrollView;
         lines = new InternalBuf(keepUndos);
@@ -89,8 +85,7 @@ public class Buf {
             sb.insert(col, str);
             lines.set(row, Line.of(line.getLineNumber(), sb.toString(), line.getIndicatorStr()));
             setCol(col + str.length());
-            VimEvent event = new VimEvent(bufNo, EventType.BUF_CHANGE);
-            eventQueue.add(event);
+            VimEng.events.add(new VimEvent(null, bufNo, EventType.BUF_CHANGE, "" + line.getLineNumber()));
             //System.out.println("Buf event: " + event);
         } catch (Exception ep) {
             ep.printStackTrace();
@@ -113,7 +108,7 @@ public class Buf {
     public void deleteLine(int row) {
         if (!lines.isEmpty()) {
             lines.remove(row);
-            eventQueue.add(new VimEvent(bufNo, EventType.BUF_CHANGE));
+            VimEng.events.add(new VimEvent(null, bufNo, EventType.BUF_CHANGE, "" + row));
         }
         if (row >= lines.size()) {
             setRow(lines.size() - 1);
@@ -129,7 +124,7 @@ public class Buf {
             if (line != null && !line.isEmpty() && col + numChars <= line.length()) {
                 String lStr = line.getContent().substring(0, col) + line.getContent().substring(col + numChars);
                 line.setContent(lStr);
-                eventQueue.add(new VimEvent(bufNo, EventType.BUF_CHANGE));
+                VimEng.events.add(new VimEvent(null, bufNo, EventType.BUF_CHANGE, lStr));
                 lines.set(row, line);
             }
         } catch (Exception ep) {
@@ -148,7 +143,7 @@ public class Buf {
 
     public void replaceLine(int row, String replaceStr) {
         lines.getCurrBuf(row).setContent(replaceStr);
-        eventQueue.add(new VimEvent(bufNo, EventType.BUF_CHANGE));
+        VimEng.events.add(new VimEvent(null, bufNo, EventType.BUF_CHANGE, "" + row));
     }
 
     public void setLine(int row, String str) {
@@ -156,7 +151,7 @@ public class Buf {
             lines.add(new Line(row, "", null));
         }
         lines.set(row, new Line(row, str, null));
-        eventQueue.add(new VimEvent(bufNo, EventType.BUF_CHANGE));
+        VimEng.events.add(new VimEvent(null, bufNo, EventType.BUF_CHANGE, "" + row));
     }
 
     public void addBufferMode(BufferMode bufferMode) {
@@ -194,7 +189,7 @@ public class Buf {
         int size = lines.size();
         lines.add(new Line(size, str, null));
         setCol(str.length());
-        eventQueue.add(new VimEvent(bufNo, EventType.BUF_CHANGE));
+        VimEng.events.add(new VimEvent(null, bufNo, EventType.BUF_CHANGE, str));
     }
 
     public List<Line> getLinesDangerous() {
@@ -214,7 +209,7 @@ public class Buf {
         this.lines.addAll(keptLines, insertAfter);
         row.set(0);
         col.set(0);
-        eventQueue.add(new VimEvent(bufNo, EventType.BUF_CHANGE));
+        VimEng.events.add(new VimEvent(null, bufNo, EventType.BUF_CHANGE, "" + insertAfter));
     }
 
     public String getFilename() {
@@ -227,18 +222,18 @@ public class Buf {
             return false;
         }
         Buf buf = (Buf) o;
-        return bufNo == buf.bufNo && Objects.equals(name, buf.name) && Objects.equals(filename, buf.filename) && Objects.equals(scrollView, buf.scrollView) && Objects.equals(lines, buf.lines) && Objects.equals(row, buf.row) && Objects.equals(col, buf.col) && Objects.equals(bufferModes, buf.bufferModes) && Objects.equals(eventQueue, buf.eventQueue);
+        return bufNo == buf.bufNo && Objects.equals(name, buf.name) && Objects.equals(filename, buf.filename) && Objects.equals(scrollView, buf.scrollView) && Objects.equals(lines, buf.lines) && Objects.equals(row, buf.row) && Objects.equals(col, buf.col) && Objects.equals(bufferModes, buf.bufferModes);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, filename, bufNo, scrollView, lines, row, col, bufferModes, eventQueue);
+        return Objects.hash(name, filename, bufNo, scrollView, lines, row, col, bufferModes);
     }
 
     public void appendToLine(String str) {
         setLine(getRow(), getCurrentLine() + str);
         setCol(getCurrentLine().length());
-        eventQueue.add(new VimEvent(bufNo, EventType.BUF_CHANGE));
+        VimEng.events.add(new VimEvent(null, bufNo, EventType.BUF_CHANGE, str));
     }
 
     public Set<BufferMode> getBufferModes() {
@@ -396,7 +391,7 @@ public class Buf {
         lines.reset();
         row.set(0);
         col.set(0);
-        eventQueue.clear();
+        VimEng.events.clear();
     }
 
     public void calcPopoverScrollView(int row, int screenWidth, int screenHeight) {
@@ -409,11 +404,6 @@ public class Buf {
 
     public String getLinesAsStr() {
         return lines.getLinesAsStr();
-    }
-
-    public void updateStatusBuffer(VimMode vimMode, String keys) {
-        String ans = SFormatter.format("MODE: {{status}} Keys: {{keys}}", vimMode.toString(), keys);
-        setLines(List.of(Line.of(0, ans, null)), 0);
     }
 
     public void removeLines(int startRow, int endRow) {

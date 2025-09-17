@@ -14,7 +14,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.Queue;
+import java.util.concurrent.BlockingQueue;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -45,11 +45,11 @@ public class PathHelper {
         return Path.of(System.getProperty("user.dir"));
     }
 
-    public static List<Buf> loadFilesIntoBufs(Harpoon<Buf> harpoonBuf, Path dir, Predicate<Path> filter, Queue<VimEvent> queue) {
+    public static List<Buf> loadFilesIntoBufs(Harpoon<Buf> harpoonBuf, Path dir, Predicate<Path> filter, BlockingQueue<VimEvent> queue) {
         return streamPath(dir, filter, null)
                 .map(path -> {
                     try {
-                        Buf buf = new Buf(path.toString(), path.toString(), harpoonBuf.getNextInt(), null, queue, false);
+                        Buf buf = new Buf(path.toString(), path.toString(), harpoonBuf.getNextInt(), null, false);
                         buf.setLinesListStr(Files.readAllLines(path, StandardCharsets.UTF_8), 0);
                         harpoonBuf.add(buf);
                         return buf;

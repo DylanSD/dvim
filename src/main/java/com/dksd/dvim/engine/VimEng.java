@@ -1,9 +1,13 @@
 package com.dksd.dvim.engine;
 
 import com.dksd.dvim.buffer.Buf;
+import com.dksd.dvim.event.EventType;
+import com.dksd.dvim.event.VimEvent;
+import com.dksd.dvim.event.VimListener;
 import com.dksd.dvim.mapping.KeyMappingMatcher;
 import com.dksd.dvim.mapping.trie.TrieMapManager;
 import com.dksd.dvim.utils.PathHelper;
+import com.dksd.dvim.utils.SFormatter;
 import com.dksd.dvim.view.Line;
 import com.dksd.dvim.view.View;
 import com.dksd.dvim.view.VimMode;
@@ -17,10 +21,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -33,19 +39,23 @@ public class VimEng {
     private Map<String, View> views = new ConcurrentHashMap<>();
     private AtomicReference<VimMode> vimMode = new AtomicReference<>(VimMode.COMMAND);
     private TerminalScreen terminalScreen;
-    private final ExecutorService threadPool;
-    private final ScheduledExecutorService newScheduledThread = Executors.newSingleThreadScheduledExecutor();
     private AtomicReference<String> activeView = new AtomicReference<>(START_VIEW);
-    private CopyOnWriteArrayList<Consumer<VimEng>> backgroundTasks = new CopyOnWriteArrayList<>();
     private KeyMappingMatcher keyMappingMatcher;
+    public static BlockingQueue<VimEvent> events = new LinkedBlockingQueue<>();
+    private final List<VimListener> eventListeners = new CopyOnWriteArrayList<>();
+    private CopyOnWriteArrayList<Consumer<VimEng>> backgroundTasks = new CopyOnWriteArrayList<>();
+    private ExecutorService threadPool;
+    private final ScheduledExecutorService newScheduledThread = Executors.newSingleThreadScheduledExecutor();
 
     public VimEng(TerminalScreen screen,
-                  ExecutorService threadPool,
-                  TrieMapManager trieMapManager) {
-        terminalScreen = screen;
+                  ExecutorService threadPool) {
+        this.terminalScreen = screen;
         this.threadPool = threadPool;
-        views.put(START_VIEW, new View(START_VIEW, screen, threadPool, true));
-        views.put(TELESCOPE_VIEW, new View(TELESCOPE_VIEW, screen, threadPool, false));
+    }
+
+    public void init(TrieMapManager trieMapManager) {
+        views.put(START_VIEW, new View(START_VIEW, terminalScreen, true));
+        views.put(TELESCOPE_VIEW, new View(TELESCOPE_VIEW, terminalScreen, false));
         keyMappingMatcher = new KeyMappingMatcher(trieMapManager);
         addBackgroundTask(ve -> ve.getView().draw(terminalScreen));
         newScheduledThread.scheduleWithFixedDelay(() -> {
@@ -53,6 +63,39 @@ public class VimEng {
                 backgroundTask.accept(this);
             }
         }, 10, 20, TimeUnit.MILLISECONDS);
+        addListener(vimEvent -> {
+            String ans;
+            if (vimEvent.getEventType().equals(EventType.KEY_PRESS)) {
+                ans = SFormatter.format("MODE: {{status}} Keys: {{keys}}", vimMode.toString(), vimEvent.getValue());
+            } else {
+                ans = SFormatter.format("MODE: {{status}}", vimMode.toString());
+            }
+            getView().getBufferByName(View.STATUS_BUFFER).setLines(List.of(Line.of(0, ans, null)), 0);
+        });
+        threadPool.execute(() -> {
+            while (true) {
+                try {
+                    VimEvent event = events.poll(10, TimeUnit.SECONDS);
+                    if (event == null) {
+                        continue;
+                    }
+                    for (VimListener eventListener : eventListeners) {
+                        eventListener.handle(event);
+                    }
+                } catch (InterruptedException e) {
+                    //NOOP
+                }
+            }
+        });
+    }
+
+    public VimListener addListener(VimListener vimListener) {
+        this.eventListeners.add(vimListener);
+        return vimListener;
+    }
+
+    public void removeListeners(List<VimListener> vimListeners) {
+        eventListeners.removeAll(vimListeners);
     }
 
     public void addBackgroundTask(Consumer<VimEng> task) {
@@ -124,6 +167,7 @@ public class VimEng {
 
     public void setVimMode(VimMode vimModeIn) {
         vimMode.set(vimModeIn);
+        events.add(new VimEvent(getView().getName(), getActiveBuf().getBufNo(), EventType.MODE_CHANGE, vimModeIn.toString()));
     }
 
 //    private void setCol(int col) {
@@ -250,7 +294,11 @@ public class VimEng {
     }
 
     public void handleKey(KeyStroke key) {
-        keyMappingMatcher.match(getView().getBufferByName(View.STATUS_BUFFER), getVimMode(), key);
+        keyMappingMatcher.match(getView(), getVimMode(), key);
+    }
+
+    public BlockingQueue<VimEvent> getEvents() {
+        return events;
     }
 }
 

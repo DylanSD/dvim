@@ -24,13 +24,14 @@ public class TabCompletion {
     private static final long TIMEOUT = 1000;
     private final CompletableFuture<Line> resultFuture;
     private final ExecutorService executorService;
-    private final TrieMapManager tabCompleteTrie = new TrieMapManager();
+    private final TrieMapManager tabCompleteTrie;
     public static final String ROW_INDICATOR = " -->";
     private VimListener vimListener;
     private Consumer<Line> consumer;
 
     public TabCompletion(ExecutorService executorService) {
         this.executorService = executorService;
+        tabCompleteTrie = new TrieMapManager();
         resultFuture = new CompletableFuture<>();
     }
 
@@ -72,7 +73,7 @@ public class TabCompletion {
                     revertTabComplete(vimEng, tm);
                     return null;
                 }, true);
-        vimListener = vimEng.getView().addListener(vimEvent -> {
+        vimListener = vimEng.addListener(vimEvent -> {
             if (vimEvent.getBufNo() == activeBuf.getBufNo() && EventType.BUF_CHANGE.equals(vimEvent.getEventType())) {
                 String cont = vimEng.getView().getBuffer(activeBuf.getBufNo()).getLine(r).getWord(c);
                 List<TrieNode> foundNodes = new ArrayList<>(5);
@@ -106,7 +107,7 @@ public class TabCompletion {
 
     private void revertTabComplete(VimEng vimEng, TrieMapManager tm) {
         vimEng.getView().setTabComplete(null);
-        vimEng.getView().removeListener(vimListener);
+        vimEng.removeListeners(List.of(vimListener));
         resultFuture.cancel(true);
         tm.removeRemappings();
     }

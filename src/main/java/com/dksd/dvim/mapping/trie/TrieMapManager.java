@@ -1,15 +1,15 @@
 package com.dksd.dvim.mapping.trie;
 
-import com.dksd.dvim.buffer.Buf;
 import com.dksd.dvim.engine.VimEng;
-import com.dksd.dvim.history.Harpoon;
+import com.dksd.dvim.event.EventType;
+import com.dksd.dvim.event.VimEvent;
 import com.dksd.dvim.mapping.VimKey;
 import com.dksd.dvim.view.Line;
+import com.dksd.dvim.view.View;
 import com.dksd.dvim.view.VimMode;
 import com.googlecode.lanterna.input.KeyStroke;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -25,12 +25,12 @@ public class TrieMapManager {
     private List<TrieNode> prevExecFunctionNodes = new ArrayList<>();
     private Map<List<VimKey>, String> cachedToVim = new ConcurrentHashMap<>();
 
-    public TrieNode mapRecursively(Buf statusBuf, VimMode vimMode, List<VimKey> keyStrokes) {
+    public TrieNode mapRecursively(View view, VimMode vimMode, List<VimKey> keyStrokes) {
         if (keyStrokes == null) {
             return null;
         }
         String keyStrokesStr = toVim(keyStrokes);
-        statusBuf.updateStatusBuffer(vimMode, keyStrokesStr);
+        VimEng.events.add(new VimEvent(view.getName(), -1, EventType.KEY_PRESS, keyStrokesStr));
         TrieNode foundNode = mappings.get(vimMode).find(keyStrokesStr);
         if (foundNode == null) {
             return null;
