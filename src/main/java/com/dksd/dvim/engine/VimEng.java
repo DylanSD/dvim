@@ -47,6 +47,7 @@ public class VimEng {
     private final ScheduledExecutorService newScheduledThread = Executors.newSingleThreadScheduledExecutor();
     private TerminalScreen terminalScreen;
     private KeyMappingMatcher keyMappingMatcher;
+    public static AtomicReference<String> errorMsg = new AtomicReference<>();
 
     public VimEng(TerminalScreen screen,
                   ExecutorService threadPool) {
@@ -139,6 +140,7 @@ public class VimEng {
             if (params.isEmpty()) {
                 if (activeBuf.getFilename() == null || activeBuf.isEmpty()) {
                     popupErrorMessage("No filename supplied for new buffer!", 10, TimeUnit.SECONDS);
+                    return;
                 }
                 params.add(activeBuf.getFilename());
             }

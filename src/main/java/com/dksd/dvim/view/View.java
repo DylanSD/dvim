@@ -19,6 +19,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import com.catppuccin.Palette;
 import com.dksd.dvim.buffer.Buf;
 import com.dksd.dvim.buffer.BufferMode;
+import com.dksd.dvim.engine.VimEng;
 import com.dksd.dvim.higlight.JavaSyntaxHighlighter;
 import com.dksd.dvim.internalbuf.InternalBuf;
 import com.googlecode.lanterna.Symbols;
@@ -30,6 +31,8 @@ import com.googlecode.lanterna.graphics.TextGraphics;
 import com.googlecode.lanterna.screen.TerminalScreen;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static com.dksd.dvim.engine.VimEng.errorMsg;
 
 public class View {
 
@@ -57,7 +60,6 @@ public class View {
     private AtomicLong lastDrawn = new AtomicLong();
     private AtomicInteger lastHashDrawn = new AtomicInteger();
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
-    private AtomicReference<String> errorMsg = new AtomicReference<>();
 
     public View(String viewName, TerminalScreen screen) {
         this.name = viewName;
@@ -94,7 +96,7 @@ public class View {
 
         mainBuf = createBuf(
                 "main",
-                "main.txt",
+                null,
                 100,
                 60,
                 Set.of(
@@ -229,8 +231,8 @@ public class View {
             if (errMsg != null && !errMsg.isEmpty()) {
                 drawString(textGraphics,
                         new Line(0, errorMsg.get(), null),
-                        30,
-                        5,
+                        50,
+                        0,
                         futures);
             }
 

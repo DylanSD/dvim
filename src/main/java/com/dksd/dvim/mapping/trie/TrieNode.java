@@ -45,7 +45,7 @@ public class TrieNode {
         return functions.getLast();
     }
 
-    public Function<String, String> removeLastFunc() {
+    public synchronized Function<String, String> removeLastFunc() {
         if (functions.size() > 1) {
             return functions.removeLast();
         }
@@ -53,6 +53,7 @@ public class TrieNode {
     }
 
     public void addFunction(String desc, Function<String, String> remapFunc) {
+        this.desc = desc;
         functions.add(remapFunc);
     }
 
