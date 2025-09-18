@@ -14,14 +14,11 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
 
 import com.catppuccin.Palette;
 import com.dksd.dvim.buffer.Buf;
 import com.dksd.dvim.buffer.BufferMode;
-import com.dksd.dvim.engine.VimEng;
 import com.dksd.dvim.higlight.JavaSyntaxHighlighter;
-import com.dksd.dvim.internalbuf.InternalBuf;
 import com.googlecode.lanterna.Symbols;
 import com.googlecode.lanterna.TerminalPosition;
 import com.googlecode.lanterna.TerminalSize;

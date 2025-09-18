@@ -19,6 +19,9 @@ public class MultiLineInternalBuf implements InternalBuf {
 
     @Override
     public Line get(int row) {
+        if (lines.isEmpty() || row >= lines.size()) {
+            return null;
+        }
         return lines.get(row);
     }
 
