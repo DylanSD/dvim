@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
@@ -39,7 +40,7 @@ public class VimEng {
     private final Map<String, View> views = new ConcurrentHashMap<>();
     private final AtomicReference<VimMode> vimMode = new AtomicReference<>(VimMode.COMMAND);
     private final AtomicReference<String> activeView = new AtomicReference<>(START_VIEW);
-    public static BlockingQueue<VimEvent> events = new LinkedBlockingQueue<>();
+    public static final BlockingQueue<VimEvent> events = new LinkedBlockingQueue<>();
     private final List<VimListener> eventListeners = new CopyOnWriteArrayList<>();
     private final CopyOnWriteArrayList<Consumer<VimEng>> backgroundTasks = new CopyOnWriteArrayList<>();
     private final ExecutorService threadPool;
@@ -134,30 +135,33 @@ public class VimEng {
 
     public void executeFunction(Buf activeBuf, String functionToExec) {
         try {
-            String[] params = getParams(functionToExec);
+            List<String> params = getParams(functionToExec);
+            if (params.isEmpty()) {
+                params.add(activeBuf.getFilename());
+            }
             if (functionToExec.startsWith("w")) {
                 PathHelper.writeFile(params, activeBuf.getLinesDangerous());
+                System.out.println("Wrote file: " + params);
             } else if ("r".equals(functionToExec)) {
-                activeBuf.setLines(PathHelper.readFile(Path.of(params[0])), 0);
+                activeBuf.setLines(PathHelper.readFile(Path.of(params.getFirst())), 0);
             }
         } catch (Exception ep) {
             ep.printStackTrace();
         }
     }
 
-    private String[] getParams(String functionToExec) {
+    private List<String> getParams(String functionToExec) {
         if (functionToExec == null || functionToExec.isBlank()) {
-            return new String[0]; // nothing to return
+            return Collections.emptyList();
         }
 
-        // Split on one-or-more spaces to avoid empty tokens
-        String[] tokens = functionToExec.trim().split("\\s+");
+        List<String> tokens = new ArrayList<>(Arrays.asList(functionToExec.trim().split("\\s+")));
 
-        if (tokens.length <= 1) {
-            return new String[0]; // no parameters
+        if (tokens.size() <= 1) {
+            return Collections.emptyList();
         }
-
-        return Arrays.copyOfRange(tokens, 1, tokens.length);
+        tokens.removeFirst();
+        return tokens;
     }
 
     public void setVimMode(VimMode vimModeIn) {

@@ -76,18 +76,23 @@ public class Buf {
     }
 
     public void insertIntoLine(String str) {
-        int row = getRow();
-        int col = getCol();
         try {
+            if (lines.size() == 0) {
+                addRow(str);
+                return;
+            }
+            int row = getRow();
+            int col = getCol();
             Line line = lines.get(row);
             StringBuilder sb = new StringBuilder(line.getContent());
             sb.insert(col, str);
             lines.set(row, Line.of(line.getLineNumber(), sb.toString(), line.getIndicatorStr()));
             setCol(col + str.length());
-            VimEng.events.add(new VimEvent(null, bufNo, EventType.BUF_CHANGE, "" + line.getLineNumber()));
+            VimEng.events.add(new VimEvent(null, bufNo, EventType.BUF_CHANGE_INSERT, "" + line.getLineNumber()));
             //System.out.println("Buf event: " + event);
         } catch (Exception ep) {
             ep.printStackTrace();
+            System.err.println("Error when inserting into line: " + this);
         }
     }
 
@@ -107,7 +112,7 @@ public class Buf {
     public void deleteLine(int row) {
         if (!isEmpty()) {
             lines.remove(row);
-            VimEng.events.add(new VimEvent(null, bufNo, EventType.BUF_CHANGE, "" + row));
+            VimEng.events.add(new VimEvent(null, bufNo, EventType.BUF_CHANGE_REMOVE, "" + row));
         }
         if (row >= lines.size()) {
             setRow(lines.size() - 1);
@@ -123,7 +128,7 @@ public class Buf {
             if (line != null && !line.isEmpty() && col + numChars <= line.length()) {
                 String lStr = line.getContent().substring(0, col) + line.getContent().substring(col + numChars);
                 line.setContent(lStr);
-                VimEng.events.add(new VimEvent(null, bufNo, EventType.BUF_CHANGE, lStr));
+                VimEng.events.add(new VimEvent(null, bufNo, EventType.BUF_CHANGE_REMOVE, lStr));
                 lines.set(row, line);
             }
         } catch (Exception ep) {
@@ -164,7 +169,7 @@ public class Buf {
         int size = lines.size();
         lines.set(size, new Line(size, str, null));
         setCol(str.length());
-        VimEng.events.add(new VimEvent(null, bufNo, EventType.BUF_CHANGE, str));
+        VimEng.events.add(new VimEvent(null, bufNo, EventType.BUF_CHANGE_ADD, str));
     }
 
     public List<Line> getLinesDangerous() {
@@ -184,7 +189,7 @@ public class Buf {
         this.lines.setAll(keptLines);
         row.set(0);
         col.set(0);
-        VimEng.events.add(new VimEvent(null, bufNo, EventType.BUF_CHANGE, "" + insertAfter));
+        VimEng.events.add(new VimEvent(null, bufNo, EventType.BUF_CHANGE_ADD, "" + insertAfter));
     }
 
     public String getFilename() {

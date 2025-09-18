@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -70,7 +71,8 @@ public final class Telescope<T> {
     private Buf resultsBuf;
     private int inputBufNo;
     private List<Result> results;
-    private List<VimListener> teleListenersToTrack;
+    private final List<VimListener> teleListenersToTrack = new CopyOnWriteArrayList<>();
+    private final static List<EventType> bufChanges = List.of(EventType.BUF_CHANGE_ADD, EventType.BUF_CHANGE_REMOVE, EventType.BUF_CHANGE_INSERT);
 
     public Telescope(VimEng vimEng) {
         this.vimEng = vimEng;
@@ -244,7 +246,7 @@ public final class Telescope<T> {
                                               Buf input,
                                               FuzzyMatcherV1 fuzzyMatcher,
                                               Buf results) {
-        if (vimEvent.getBufNo() == inputBufNo && EventType.BUF_CHANGE.equals(vimEvent.getEventType())) {
+        if (vimEvent.getBufNo() == inputBufNo && isBufChangeEvent(vimEvent)) {
             String currLine = input.getLine(input.getRow()).getContent();
             System.out.println("Received buf change event for buf: " + inputBufNo + " value " + currLine);
             List<Result> keptLines = fuzzyMatcher.match(currLine);
@@ -257,6 +259,13 @@ public final class Telescope<T> {
             return keptLines;
         }
         return Collections.emptyList();
+    }
+
+    public static boolean isBufChangeEvent(VimEvent vimEvent) {
+        if (vimEvent == null) {
+            return false; // or throw IllegalArgumentException if you prefer
+        }
+        return bufChanges.contains(vimEvent.getEventType());
     }
 
     private String revertTelescopeView(VimEng vimEng, View currView, View telescopeView, TrieMapManager tm) {

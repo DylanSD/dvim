@@ -31,7 +31,8 @@ public class KeyMappingMatcher {
             pendingTask.cancel(false);
         }
 
-        if (key.getKeyType().equals(KeyType.Character) &&
+        if (VimMode.COMMAND.equals(vimMode) &&
+                key.getKeyType().equals(KeyType.Character) &&
                 keyStrokes.peek() != null &&
                 keyStrokes.peek().getKeyStroke().getCharacter() == ' ') {
             pendingTask = scheduler.schedule(() -> {

@@ -13,6 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.function.Predicate;
@@ -75,13 +76,13 @@ public class PathHelper {
 
     public static void writeFile(String filename, List<Line> lines) {
         try {
-            writeFile(filename.split(""), lines);
+            writeFile(Arrays.asList(filename.split("")), lines);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    public static void writeFile(String[] filenameOuts, List<Line> lines) throws IOException {
+    public static void writeFile(List<String> filenameOuts, List<Line> lines) throws IOException {
         for (String filenameOut : filenameOuts) {
             try (
                     PrintWriter printWriter = new PrintWriter(

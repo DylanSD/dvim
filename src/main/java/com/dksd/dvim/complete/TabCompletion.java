@@ -17,6 +17,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
+import static com.dksd.dvim.complete.Telescope.isBufChangeEvent;
 import static com.dksd.dvim.complete.Telescope.moveArrowInResults;
 
 public class TabCompletion {
@@ -74,7 +75,7 @@ public class TabCompletion {
                     return null;
                 }, true);
         vimListener = vimEng.addListener(vimEvent -> {
-            if (vimEvent.getBufNo() == activeBuf.getBufNo() && EventType.BUF_CHANGE.equals(vimEvent.getEventType())) {
+            if (vimEvent.getBufNo() == activeBuf.getBufNo() && isBufChangeEvent(vimEvent)) {
                 String cont = vimEng.getView().getBuffer(activeBuf.getBufNo()).getLine(r).getWord(c);
                 List<TrieNode> foundNodes = new ArrayList<>(5);
                 tabCompleteTrie.mapWords(foundNodes, vimEng.getVimMode(), cont);
