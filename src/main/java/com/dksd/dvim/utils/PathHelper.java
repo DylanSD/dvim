@@ -74,14 +74,6 @@ public class PathHelper {
         }
     }
 
-    public static void writeFile(String filename, List<Line> lines) {
-        try {
-            writeFile(Arrays.asList(filename.split("")), lines);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     public static void writeFile(List<String> filenameOuts, List<Line> lines) throws IOException {
         for (String filenameOut : filenameOuts) {
             try (

@@ -372,11 +372,11 @@ public class Buf {
         }
     }
 
-    public void setFilename(String filename) {
-        this.filename = filename;
-    }
-
     public void setLine(int row, String line) {
         lines.set(row, new Line(row, line, null));
+    }
+
+    public void setFilename(String filename) {
+        this.filename = filename;
     }
 }

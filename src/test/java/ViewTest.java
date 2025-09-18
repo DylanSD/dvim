@@ -1,9 +1,6 @@
 import java.io.IOException;
-import java.util.List;
-import java.util.concurrent.Executors;
 
 import static com.dksd.dvim.view.View.HEADER_BUFFER;
-import static com.dksd.dvim.view.View.MAIN_BUFFER;
 import static com.dksd.dvim.view.View.SIDE_BUFFER;
 import static com.dksd.dvim.view.View.STATUS_BUFFER;
 import static org.junit.jupiter.api.Assertions.assertEquals;

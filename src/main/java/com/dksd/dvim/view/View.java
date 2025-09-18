@@ -7,15 +7,20 @@ import java.util.Objects;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 import com.catppuccin.Palette;
 import com.dksd.dvim.buffer.Buf;
 import com.dksd.dvim.buffer.BufferMode;
 import com.dksd.dvim.higlight.JavaSyntaxHighlighter;
+import com.dksd.dvim.internalbuf.InternalBuf;
 import com.googlecode.lanterna.Symbols;
 import com.googlecode.lanterna.TerminalPosition;
 import com.googlecode.lanterna.TerminalSize;
@@ -51,6 +56,8 @@ public class View {
     private Line tabComplete;
     private AtomicLong lastDrawn = new AtomicLong();
     private AtomicInteger lastHashDrawn = new AtomicInteger();
+    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+    private AtomicReference<String> errorMsg = new AtomicReference<>();
 
     public View(String viewName, TerminalScreen screen) {
         this.name = viewName;
@@ -215,6 +222,16 @@ public class View {
                         new TerminalSize(tabBuf.getScrollView().getHeight(), tabBuf.getScrollView().getWidth()), ' ');
 
                 drawBuffer(screen, textGraphics, tabBuf, futures);
+            }
+
+            //Draw error messages if any.
+            String errMsg = errorMsg.get();
+            if (errMsg != null && !errMsg.isEmpty()) {
+                drawString(textGraphics,
+                        new Line(0, errorMsg.get(), null),
+                        30,
+                        5,
+                        futures);
             }
 
             for (Future<?> future : futures) {
@@ -471,5 +488,12 @@ public class View {
 
     public Buf getMainBuffer() {
         return mainBuf;
+    }
+
+    public void popupErrorMessage(String error, int seconds, TimeUnit timeUnit) {
+        errorMsg.set(error);
+        scheduler.schedule(() -> {
+            errorMsg.set("");
+        }, seconds, timeUnit);
     }
 }

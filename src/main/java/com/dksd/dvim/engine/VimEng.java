@@ -137,6 +137,9 @@ public class VimEng {
         try {
             List<String> params = getParams(functionToExec);
             if (params.isEmpty()) {
+                if (activeBuf.getFilename() == null || activeBuf.isEmpty()) {
+                    popupErrorMessage("No filename supplied for new buffer!", 10, TimeUnit.SECONDS);
+                }
                 params.add(activeBuf.getFilename());
             }
             if (functionToExec.startsWith("w")) {
@@ -150,15 +153,19 @@ public class VimEng {
         }
     }
 
+    private void popupErrorMessage(String errorMsg, int seconds, TimeUnit timeUnit) {
+        getView().popupErrorMessage(errorMsg, seconds, timeUnit);
+    }
+
     private List<String> getParams(String functionToExec) {
         if (functionToExec == null || functionToExec.isBlank()) {
-            return Collections.emptyList();
+            return new ArrayList<>();
         }
 
         List<String> tokens = new ArrayList<>(Arrays.asList(functionToExec.trim().split("\\s+")));
 
         if (tokens.size() <= 1) {
-            return Collections.emptyList();
+            return new ArrayList<>();
         }
         tokens.removeFirst();
         return tokens;
